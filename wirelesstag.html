@@ -1,0 +1,113 @@
+<script type="text/javascript">
+
+    function defaultNameFromUI() {
+        var tagName = $("#node-input-tag option:selected").text();
+        var sensor = $("#node-input-sensor option:selected").text();
+        if (tagName && sensor) {
+            return tagName +" ("+ sensor +")";
+        }
+        return "Wireless Tag";
+    }
+
+    RED.nodes.registerType('wirelesstag', {
+        category: 'sensor',
+        color: '#a6bbcf',
+        defaults: {
+            tagmanager: { required: true, value: "" },
+            tag: { required: true, value: "" },
+            sensor: { required: true, value: "" },
+            name: { value: "" },
+            defaultName: { value: "" }, // this is computed, not in UI
+            cloud: { value: "", type: "wirelesstag-config" }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "wirelesstag.png",
+        label: function() {
+            if (this.name) return this.name;
+            if (this.defaultName) return this.defaultName;
+            return "Wireless Tag";
+        },
+        oneditprepare: function() {
+            var prefix = "/wirelesstag/" + this.cloud;
+            var node = this;
+
+            function restoreSelected(elemId, selVal) {
+                if (! selVal) return;
+                $(elemId).find("option[value='"+selVal+"']").prop('selected', true);
+            }
+
+            if (this.name === this.defaultName) $("#node-input-name").val('');
+            $.get(prefix + "/tagmanagers", function(tagManagers) {
+                var selMgr = $("#node-input-tagmanager").val() || node.tagmanager;
+                $("#node-input-tagmanager").empty();
+                $.each(tagManagers, function(mac, name) {
+                    $("#node-input-tagmanager").append('<option value="'+mac+'">'+name+'</option>');
+                });
+                restoreSelected("#node-input-tagmanager", selMgr);
+                $("#node-input-tagmanager").change();
+            });
+            $("#node-input-tagmanager").on("change", function(evt) {
+                var mac = $(evt.target).val();
+                if (mac === null) return;
+                var selTag = $("#node-input-tag").val() || node.tag;
+                $.get(prefix + "/" + mac + "/tags", function(tags) {
+                    $("#node-input-tag").empty();
+                    $.each(tags, function(uuid, name) {
+                        $("#node-input-tag").append('<option value="'+uuid+'">'+name+'</option>');
+                    });
+                    restoreSelected("#node-input-tag", selTag);
+                    $("#node-input-tag").change();
+                });
+            });
+            $("#node-input-tag").on("change", function(evt) {
+                var uuid = $(evt.target).val();
+                if (uuid === null) return;
+                var mac = $("#node-input-tagmanager").val();
+                var selSensor = $("#node-input-sensor").val() || node.sensor;
+                $.get(prefix +"/"+ mac +"/"+ uuid +"/sensors", function(sensors) {                    
+                    $("#node-input-sensor").empty();
+                    sensors.forEach(function(s) {
+                        $("#node-input-sensor").append('<option value="'+s+'">'+s+'</option>');
+                    });
+                    restoreSelected("#node-input-sensor", selSensor);
+                });
+            });
+        },
+        oneditsave: function() {
+            this.defaultName = defaultNameFromUI();
+            if (! $("#node-input-name").val()) {
+                $("#node-input-name").val(this.defaultName);
+            }
+        }
+    });
+
+</script>
+
+<script type="text/x-red" data-template-name="wirelesstag">
+    <div class="form-row">
+        <label for="node-input-cloud"><i class="icon-tag"></i> API Connection</label>
+        <input type="text" id="node-input-cloud">
+    </div>
+    <div class="form-row">
+        <label for="node-input-tagmanager"><i class="icon-tag"></i> Tag Manager</label>
+        <select type="text" id="node-input-tagmanager"></select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-tag"><i class="icon-tag"></i> Tag</label>
+        <select type="text" id="node-input-tag"></select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-sensor"><i class="icon-tag"></i> Sensor</label>
+        <select type="text" id="node-input-sensor"></select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Default">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="wirelesstag">
+    <p>A node that represents the sensor of a Wireless Tag (see <a
+    href="http://wirelesstag.net" target="_blank">http://wirelesstag.net</a>)</p>
+</script>

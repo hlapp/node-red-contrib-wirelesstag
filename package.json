@@ -1,0 +1,37 @@
+{
+  "name": "node-red-contrib-wirelesstag",
+  "version": "0.0.1",
+  "description": "Node-RED node for Wireless Tags (http://wirelesstag.net)",
+  "main": "./wirelesstag.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "jshint package.json *.js",
+    "pretest": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hlapp/node-red-contrib-wirelesstag.git"
+  },
+  "keywords": [
+    "iot",
+    "wirelesstag"
+  ],
+  "author": "Hilmar Lapp <hilmar@lappland.io>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hlapp/node-red-contrib-wirelesstag/issues"
+  },
+  "homepage": "https://github.com/hlapp/node-red-contrib-wirelesstag#readme",
+  "node-red": {
+    "nodes": {
+      "wirelesstag": "wirelesstag.js",
+      "wirelesstag-config": "wirelesstag-config.js"
+    }
+  },
+  "dependencies": {
+    "wirelesstags": "^0.5.3"
+  },
+  "devDependencies": {
+    "jshint": "^2.9.4"
+  }
+}
