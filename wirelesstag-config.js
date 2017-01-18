@@ -9,7 +9,6 @@ module.exports = function(RED) {
         this.platform = new Platform({ apiBaseURI: config.api_uri });
         this.platform.connect(this.credentials).then(() => {
             this.log("connected to Wireless Tag Cloud");
-            addWirelesstagRoutes(RED.httpNode, this);
         }).catch((err) => {
             if (err instanceof Platform.UnauthorizedAccessError) {
                 this.error("failed to connect to Wireless Tag API:");
@@ -18,13 +17,13 @@ module.exports = function(RED) {
         });
     }
 
-    function addWirelesstagRoutes(app, platformNode) {
-        let prefix = '/wirelesstag/' + platformNode.id;
-        let platform = platformNode.platform;
+    function addWirelesstagRoutes(app) {
+        let prefix = '/wirelesstag/:cloud';
+        let cloud;
 
         function apiError(res) {
             return (err) => {
-                platformNode.error(err.stack ? err.stack : err);
+                cloud.error(err.stack ? err.stack : err);
                 if (err.apiStatusCode && err.apiStatusCode > 200) {
                     res.status(err.apiStatusCode).send(err.message);
                 } else {
@@ -33,19 +32,24 @@ module.exports = function(RED) {
             };
         }
 
+        app.use(prefix, (req, res, next) => {
+            cloud = RED.nodes.getNode(req.params.cloud);
+            if (cloud) {
+                next();
+            } else {
+                res.status(404).send("Cloud config not deployed yet. "
+                                     + "Deploy first, then resume config.");
+            }
+        });
         app.get(prefix + '/tagmanagers', (req, res) => {
-            platform.connect(platformNode.credentials).then(() => {
-                return platform.discoverTagManagers();
-            }).then((managers) => {
+            cloud.platform.discoverTagManagers().then((managers) => {
                 let macMap = {};
                 managers.forEach((mgr) => { macMap[mgr.mac] = mgr.name; });
                 res.send(macMap);
             }).catch(apiError(res));
         });
         app.get(prefix + '/:mgr/tags', (req, res) => {
-            platform.connect(platformNode.credentials).then(() => {
-                return platform.discoverTagManagers();
-            }).then((managers) => {
+            cloud.platform.discoverTagManagers().then((managers) => {
                 managers = managers.filter((m) => {
                     return m.mac === req.params.mgr;
                 });
@@ -57,9 +61,7 @@ module.exports = function(RED) {
             }).catch(apiError(res));
         });
         app.get(prefix + '/:mac/:tag/sensors', (req, res) => {
-            platform.connect(platformNode.credentials).then(() => {
-                return platform.discoverTagManagers();
-            }).then((managers) => {
+            cloud.platform.discoverTagManagers().then((managers) => {
                 managers = managers.filter((m) => {
                     return m.mac === req.params.mac;
                 });
@@ -69,6 +71,8 @@ module.exports = function(RED) {
             }).catch(apiError(res));
         });
     }
+
+    addWirelesstagRoutes(RED.httpNode);
 
     RED.nodes.registerType("wirelesstag-config", WirelessTagConfig, {
         credentials: {

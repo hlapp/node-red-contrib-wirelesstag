@@ -29,7 +29,8 @@
             return "Wireless Tag";
         },
         oneditprepare: function() {
-            var prefix = "/wirelesstag/" + this.cloud;
+            var mountpoint = "/wirelesstag";
+            var prefix;
             var node = this;
 
             function restoreSelected(elemId, selVal) {
@@ -37,16 +38,37 @@
                 $(elemId).find("option[value='"+selVal+"']").prop('selected', true);
             }
 
+            // blank out name input if value is equal to the computed name
             if (this.name === this.defaultName) $("#node-input-name").val('');
-            $.get(prefix + "/tagmanagers", function(tagManagers) {
-                var selMgr = $("#node-input-tagmanager").val() || node.tagmanager;
-                $("#node-input-tagmanager").empty();
-                $.each(tagManagers, function(mac, name) {
-                    $("#node-input-tagmanager").append('<option value="'+mac+'">'+name+'</option>');
+
+            // on setting (or changing) the cloud connection, repopulate
+            // tag manager selection
+            $("#node-input-cloud").on("change", function(evt) {
+                var cloud = $("#node-input-cloud").val();
+                if (cloud === "_ADD_") return;
+                prefix = mountpoint + "/" + cloud;
+                $.get(prefix + "/tagmanagers", function(tagManagers) {
+                    var selMgr =
+                        $("#node-input-tagmanager").val() || node.tagmanager;
+                    $("#node-input-tagmanager").empty();
+                    $.each(tagManagers, function(mac, name) {
+                        $("#node-input-tagmanager").append('<option value="'+mac+'">'+name+'</option>');
+                    });
+                    restoreSelected("#node-input-tagmanager", selMgr);
+                    $("#node-input-tagmanager").change();
+                }).fail(function(jqXHR) {
+                    $("#node-input-sensor").empty();
+                    $("#node-input-tag").empty();
+                    $("#node-input-tagmanager").empty();
+                    RED.notify("Unable to populate selection lists ("
+                               + jqXHR.status + " - " + jqXHR.statusText + "): "
+                               + jqXHR.responseText,
+                               "error", false, 6000);
                 });
-                restoreSelected("#node-input-tagmanager", selMgr);
-                $("#node-input-tagmanager").change();
             });
+
+            // on selecting (or changing) the tag manager, repopulate
+            // the selection of associated tags
             $("#node-input-tagmanager").on("change", function(evt) {
                 var mac = $(evt.target).val();
                 if (mac === null) return;
@@ -60,6 +82,8 @@
                     $("#node-input-tag").change();
                 });
             });
+
+            // on selecting (or changing) the tag, repopulate the tag's sensors
             $("#node-input-tag").on("change", function(evt) {
                 var uuid = $(evt.target).val();
                 if (uuid === null) return;
