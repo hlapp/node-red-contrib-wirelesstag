@@ -2,16 +2,15 @@
     RED.nodes.registerType('wirelesstag-config', {
         category: 'config',
         defaults: {
-            api_uri: { value: "" }
+            api_uri: { value: "" },
+            name: { value: "" }
         },
         credentials: {
             username: { type: "text" },
             password: { type: "password" }
         },
         label: function() {
-            return "Wirelesstag Cloud (" +
-                (this.credentials ? this.credentials.username : "none") +
-                ")";
+            return this.name ? this.name : "Wirelesstag Cloud";
         }
     });
 </script>
@@ -28,5 +27,9 @@
     <div class="form-row">
         <label for="node-config-input-password"><i class="icon-tag"></i> Password</label>
         <input type="password" id="node-config-input-password">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Optional">
     </div>
 </script>
