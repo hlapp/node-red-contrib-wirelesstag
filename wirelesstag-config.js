@@ -32,6 +32,7 @@ module.exports = function(RED) {
             };
         }
 
+        app.use(prefix, RED.auth.needsPermission("nodes.read"));
         app.use(prefix, (req, res, next) => {
             cloud = RED.nodes.getNode(req.params.cloud);
             if (cloud) {
