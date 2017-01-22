@@ -86,7 +86,16 @@ module.exports = function(RED) {
             });
             node.log("starting updates for tag");
             updater.addTags(tag);
-            updater.startUpdateLoop();
+            updater.startUpdateLoop((err,result) => {
+                if (err) return; // errors are handled elsewhere
+                if (result.value.length === 0) {
+                    RED.log.debug("no updates for wirelesstag nodes");
+                } else {
+                    let names = result.value.map((d) => d.name).join(", ");
+                    RED.log.debug("new data for " + result.value.length
+                                  + " wirelesstag node(s): " + names);
+                }
+            });
             node.on('close', () => {
                 node.log("stopping updates for tag");
                 updater.removeTags(tag);
