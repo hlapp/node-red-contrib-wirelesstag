@@ -64,6 +64,7 @@ module.exports = function(RED) {
     }
 
     function startSending(node, config) {
+        if (! config) config = node.config;
         node.platform.discoverTagManagers().then((managers) => {
             managers = managers.filter((m) => {
                 return m.mac === config.tagmanager;
@@ -106,6 +107,7 @@ module.exports = function(RED) {
     }
 
     function sendData(node, sensor, config) {
+        if (! config) config = node.config;
         let msg = {
             payload: {
                 reading: sensor.reading,

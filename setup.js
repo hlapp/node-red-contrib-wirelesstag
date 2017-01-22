@@ -22,6 +22,13 @@ module.exports = function(RED) {
             };
         }
 
+        // add the missing node.config
+        if (! node.config) {
+            Object.defineProperty(node, "config", {
+                enumerable: true,
+                value: def
+            });
+        }
     }
     return {
         nodes: {
