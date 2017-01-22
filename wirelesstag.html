@@ -17,7 +17,9 @@
             tag: { required: true, value: "" },
             sensor: { required: true, value: "" },
             name: { value: "" },
-            defaultName: { value: "" }, // this is computed, not in UI
+            topic: { value: "" },
+            topicIsPrefix: { value: false },
+            defaultName: { value: "" }, // this is computed, hidden in UI
             cloud: { value: "", type: "wirelesstag-config" }
         },
         inputs: 0,
@@ -97,6 +99,17 @@
                     restoreSelected("#node-input-sensor", selSensor);
                 });
             });
+
+            // if a topic is entered manually, ask whether it is to be
+            // used as a prefix
+            $("#node-input-topic").on("change", function(evt) {
+                var topic = $(evt.target).val();
+                if (topic) {
+                    $("#node-topicIsPrefix").show();
+                } else {
+                    $("#node-topicIsPrefix").hide();
+                }
+            });
         },
         oneditsave: function() {
             this.defaultName = defaultNameFromUI();
@@ -124,6 +137,15 @@
     <div class="form-row">
         <label for="node-input-sensor"><i class="fa fa-bolt"></i> Sensor</label>
         <select type="text" id="node-input-sensor"></select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Default">
+    </div>
+    <div class="form-row" id="node-topicIsPrefix">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-topicIsPrefix" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-topicIsPrefix" style="width: 70%;"> Use as prefix?</label>
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>

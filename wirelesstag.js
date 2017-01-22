@@ -80,9 +80,9 @@ module.exports = function(RED) {
             let sensor = sensors.filter(s => s.sensorType === config.sensor)[0];
             if (! sensor) throw new Error(NO_SENSOR + config.sensor);
             let tag = sensor.wirelessTag;
-            sendData(node, sensor);
+            sendData(node, sensor, config);
             tag.on('data', (tag) => {
-                sendData(node, sensor);
+                sendData(node, sensor, config);
             });
             node.log("starting updates for tag");
             updater.addTags(tag);
@@ -105,7 +105,7 @@ module.exports = function(RED) {
         });
     }
 
-    function sendData(node, sensor) {
+    function sendData(node, sensor, config) {
         let msg = {
             payload: {
                 reading: sensor.reading,
@@ -113,8 +113,12 @@ module.exports = function(RED) {
                 armed: sensor.isArmed()
             }
         };
+        if (! msg.topic) msg.topic = config.topic || '';
         let tag = sensor.wirelessTag;
         let tagMgr = tag.wirelessTagManager;
+        if (config.topicIsPrefix || (msg.topic.length === 0)) {
+            msg.topic += `${tagMgr.mac}/${tag.slaveId}/${sensor.sensorType}`;
+        }
         msg.sensorConfig = sensor.monitoringConfig().asJSON();
         msg.tag = {
             name: tag.name,
