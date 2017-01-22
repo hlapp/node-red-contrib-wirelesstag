@@ -3,9 +3,10 @@
 module.exports = function(RED) {
     "use strict";
 
+    var REDx = require('./setup')(RED);
     var TagUpdater = require('wirelesstags/plugins/polling-updater');
     var tagUpdaters = {};
-    
+
     const STATUS_CONNECTED = {
         fill:"green",
         shape:"dot",
@@ -33,12 +34,15 @@ module.exports = function(RED) {
 
     /** @constructor */
     function WirelessTagNode(config) {
-        RED.nodes.createNode(this, config);
+        REDx.nodes.createNode(this, config);
         var cloud = RED.nodes.getNode(config.cloud);
         if (cloud) {
             this.platform = cloud.platform;
             if (! tagUpdaters[config.cloud]) {
+                this.debug("creating new tag updater");
                 tagUpdaters[config.cloud] = new TagUpdater(this.platform);
+            } else {
+                this.debug("reusing tag updater for " + config.cloud);
             }
             this.platform.isConnected().then((connected) => {
                 this.status(connected ? STATUS_CONNECTED : STATUS_DISCONNECTED);
@@ -94,9 +98,28 @@ module.exports = function(RED) {
 
     function sendData(node, sensor) {
         let msg = {
-            payload: { reading: sensor.reading, eventState: sensor.eventState }
+            payload: {
+                reading: sensor.reading,
+                eventState: sensor.eventState,
+                armed: sensor.isArmed()
+            }
         };
-        node.log("data: " + JSON.stringify(msg));
+        let tag = sensor.wirelessTag;
+        let tagMgr = tag.wirelessTagManager;
+        msg.sensorConfig = sensor.monitoringConfig().asJSON();
+        msg.tag = {
+            name: tag.name,
+            uuid: tag.uuid,
+            slaveId: tag.slaveId,
+            alive: tag.alive,
+            updateInterval: tag.updateInterval
+        };
+        msg.tagManager = {
+            name: tagMgr.name,
+            mac: tagMgr.mac,
+            online: tagMgr.online
+        };
+        node.debug("sending: " + JSON.stringify(msg));
         node.status(STATUS_DATA);
         node.send(msg);
         setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
