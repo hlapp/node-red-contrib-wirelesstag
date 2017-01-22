@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-wirelesstag",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node-RED node for Wireless Tags (http://wirelesstag.net)",
   "main": "./wirelesstag.js",
   "scripts": {
@@ -14,7 +14,8 @@
   },
   "keywords": [
     "iot",
-    "wirelesstag"
+    "wirelesstag",
+    "node-red"
   ],
   "author": "Hilmar Lapp <hilmar@lappland.io>",
   "license": "MIT",
