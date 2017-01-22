@@ -10,7 +10,7 @@
     }
 
     RED.nodes.registerType('wirelesstag', {
-        category: 'sensor',
+        category: 'hardware',
         color: '#a6bbcf',
         defaults: {
             tagmanager: { required: true, value: "" },
@@ -24,7 +24,7 @@
         },
         inputs: 0,
         outputs: 1,
-        icon: "wirelesstag.png",
+        icon: "wirelesstag-inv.png",
         label: function() {
             if (this.name) return this.name;
             if (this.defaultName) return this.defaultName;
@@ -112,9 +112,10 @@
             });
         },
         oneditsave: function() {
-            this.defaultName = defaultNameFromUI();
+            var defaultName = defaultNameFromUI();
+            $("#node-input-defaultName").val(defaultName);
             if (! $("#node-input-name").val()) {
-                $("#node-input-name").val(this.defaultName);
+                $("#node-input-name").val(defaultName);
             }
         }
     });
@@ -150,6 +151,7 @@
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Default">
+        <input type="hidden" id="node-input-defaultName">
     </div>
 </script>
 
