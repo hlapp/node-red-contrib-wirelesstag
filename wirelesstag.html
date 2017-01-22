@@ -158,4 +158,66 @@
 <script type="text/x-red" data-help-name="wirelesstag">
     <p>A node that represents the sensor of a Wireless Tag (see <a
     href="http://wirelesstag.net" target="_blank">http://wirelesstag.net</a>)</p>
+    <p>This node communicates with the <a href="http://mytaglist.com/media/mytaglist.com/apidoc.html" target="_blank">JSON Web Service API</a>
+      using the <a href="https://github.com/hlapp/wirelesstags-js" target="_blank">wirelesstags</a> NodeJS package.
+      The following parameters are configurable:
+    <ul><li>The JSON Web Service (Cloud) <strong>API connection</strong>. Currently
+    this requires a username (an email address) and a password. It is
+    highly recommended to create a separate service account as a
+    "limited user" for this, rather than the credentials of your
+    "main" user account. (<a href="https://github.com/hlapp/wirelesstags-js#installation-and-setup" target="_blank">Reasons</a>.)
+        You can also configure a base URI for the JSON Web API server
+    yours in not at the <a href="http://lappland.io/wirelesstags-js/wirelesstags/0.5.3/module-lib_platform.html#~API_BASE_URI" target="_blank">default URI</a>.</li>
+      <li>The <strong>Tag Manager</strong>. The list of available tag
+      managers is populated automatically.</li>
+      <li>The <strong>Tag</strong>. The list of available tags is
+      populated automatically upon selecting the tag manager.</li>
+      <li>The <strong>Sensor</strong> for which to report data. The
+      list of available sensors is auto-populated upon selecting the tag.</li>
+      <li>The <strong>Topic</strong>. May be left empty, in which
+      case the topic is auto-generated
+      as <code>tagManager.mac/tag.slaveId/sensor</code>. (The <code>MAC</code>
+      of the tag manager is its unique serial number. Each tag
+      associated with a tag manager is assigned a number between
+        0-255, its <code>slaveId</code>.)</li>
+      <li>Whether to use the topic as a prefix. If yes, instead of
+      replacing the auto-generated topic,  it is used to prefix
+        auto-generated value.</li>
+      <li>A <strong>Name</strong> for the node. Optional; if left
+      empty, it is auto-generated as <code>tag (sensor)</code>.
+    </ul></p>
+    <p>The message sent by the node will have the following
+      properties aside from <code>topic</code>:
+      <ul>
+        <li><strong><code>msg.payload</code></strong> with
+        properties <code>reading</code> (the sensor's current
+        reading), <code>eventState</code> (the current state, such
+        as <em>Normal</em>, <em>Too High</em>, etc),
+        and <code>armed</code> (true if the sensor is armed and false otherwise).</li>
+        <li><strong><code>msg.sensorConfig</code></strong>: the
+        properties of the monitoring configuration for the
+        sensor. Properties will depend on the sensor.</li>
+        <li><strong><code>msg.tag</code></strong>: additional
+        properties of the tag
+        (<code>name</code>, <code>uuid</code>, <code>slaveId</code>, <code>alive</code>,
+        and <code>updateInterval</code>).</li>
+        <li><strong><code>tagManager</code></strong>: additional
+        properties of the tag manager with which the tag is
+        associated (<code>name</code>, <code>mac</code>, and <code>online</code>).</li>
+      </ul></p>
+    <p>The node uses a polling API endpoint to continuously poll for
+    updates. (This uses the same mechanism as the <a href="https://wirelesstag.net/eth/" target="_blank">Wirelesstag web-application</a>.)
+      How frequently new data becomes available for which tag depends on the
+    update interval configured for each tag, and can thus be changed
+    (using the Wirelesstag native web or mobile apps). In principle
+    each event (such as motion detected, temperature too high, etc)
+    for armed sensors should also result in data becoming available
+      for the corresponding tag shortly thereafter.</p>
+    <p><strong>Notes:</strong>
+      <ul><li>After configuring a <em>new</em> Cloud API connection,
+      the node set to use it must first be deployed (with therefore
+      incomplete configuration) before the auto-populated selection
+          lists can be filled. An error message will indicate this.
+      </li></ul>
+    </p>
 </script>

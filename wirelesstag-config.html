@@ -33,3 +33,24 @@
         <input type="text" id="node-config-input-name" placeholder="Optional">
     </div>
 </script>
+
+<script type="text/x-red" data-help-name="wirelesstag-config">
+<p>Configuration of the JSON Web Service (Cloud) <strong>API
+    connection</strong> to use for Wirelesstag nodes.</p>
+ <p>Currently only supports authentication with username (an email
+    address) and password. It is highly recommended to create a
+    separate service account as a "limited user" for this, rather than
+    using the credentials of the "main" user
+    account. (<a href="https://github.com/hlapp/wirelesstags-js#installation-and-setup" target="_blank">Reasons</a>.)</p>
+ <p>The base URI for the JSON Web API server can also be configured if
+    it is different from the <a href="http://lappland.io/wirelesstags-js/wirelesstags/0.5.3/module-lib_platform.html#~API_BASE_URI"target="_blank">default URI</a>
+   (such as for tag managers using
+    the <a href="https://groups.google.com/d/msg/wireless-sensor-tags/cyGI5sauSmg/DMvpFWvpAQAJ" target="_blank">new API server</a>),  or
+    for self-hosted API servers.</p>
+    <p>Note that after configuring a <em>new</em> Cloud API
+      connection, the node set to use it <em>must</em> first be
+      deployed (with therefore incomplete configuration) before the
+      auto-populated selection lists can be filled. An error message
+      will indicate this.
+    </p>
+</script>
