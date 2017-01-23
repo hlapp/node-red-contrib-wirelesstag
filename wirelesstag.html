@@ -159,15 +159,11 @@
     <p>A node that represents the sensor of a Wireless Tag (see <a
     href="http://wirelesstag.net" target="_blank">http://wirelesstag.net</a>)</p>
     <p>This node communicates with the <a href="http://mytaglist.com/media/mytaglist.com/apidoc.html" target="_blank">JSON Web Service API</a>
-      using the <a href="https://github.com/hlapp/wirelesstags-js" target="_blank">wirelesstags</a> NodeJS package.
-      The following parameters are configurable:
+      using the <a href="https://github.com/hlapp/wirelesstags-js" target="_blank">wirelesstags</a> NodeJS package.</p>
+    <h3>Configuration</h3>
+    <p>The following parameters are configurable:
     <ul><li>The JSON Web Service (Cloud) <strong>API connection</strong>. Currently
-    this requires a username (an email address) and a password. It is
-    highly recommended to create a separate service account as a
-    "limited user" for this, rather than the credentials of your
-    "main" user account. (<a href="https://github.com/hlapp/wirelesstags-js#installation-and-setup" target="_blank">Reasons</a>.)
-        You can also configure a base URI for the JSON Web API server
-    yours in not at the <a href="http://lappland.io/wirelesstags-js/wirelesstags/0.5.3/module-lib_platform.html#~API_BASE_URI" target="_blank">default URI</a>.</li>
+    this requires a username (an email address) and a password.</li>
       <li>The <strong>Tag Manager</strong>. The list of available tag
       managers is populated automatically.</li>
       <li>The <strong>Tag</strong>. The list of available tags is
@@ -176,16 +172,17 @@
       list of available sensors is auto-populated upon selecting the tag.</li>
       <li>The <strong>Topic</strong>. May be left empty, in which
       case the topic is auto-generated
-      as <code>tagManager.mac/tag.slaveId/sensor</code>. (The <code>MAC</code>
+      as <code>tagManager.mac/tag.slaveId/sensor</code>. (The MAC
       of the tag manager is its unique serial number. Each tag
       associated with a tag manager is assigned a number between
         0-255, its <code>slaveId</code>.)</li>
       <li>Whether to use the topic as a prefix. If yes, instead of
       replacing the auto-generated topic,  it is used to prefix
-        auto-generated value.</li>
+        the auto-generated value.</li>
       <li>A <strong>Name</strong> for the node. Optional; if left
       empty, it is auto-generated as <code>tag (sensor)</code>.
     </ul></p>
+    <h3>Outgoing message</h3>
     <p>The message sent by the node will have the following
       properties aside from <code>topic</code>:
       <ul>
@@ -205,6 +202,7 @@
         properties of the tag manager with which the tag is
         associated (<code>name</code>, <code>mac</code>, and <code>online</code>).</li>
       </ul></p>
+    <h3>Data frequency</h3>
     <p>The node uses a polling API endpoint to continuously poll for
     updates. (This uses the same mechanism as the <a href="https://wirelesstag.net/eth/" target="_blank">Wirelesstag web-application</a>.)
       How frequently new data becomes available for which tag depends on the
@@ -213,11 +211,19 @@
     each event (such as motion detected, temperature too high, etc)
     for armed sensors should also result in data becoming available
       for the corresponding tag shortly thereafter.</p>
-    <p><strong>Notes:</strong>
+    <h3>Notes and caveats</h3>
       <ul><li>After configuring a <em>new</em> Cloud API connection,
-      the node set to use it must first be deployed (with therefore
-      incomplete configuration) before the auto-populated selection
-          lists can be filled. An error message will indicate this.
-      </li></ul>
-    </p>
+      the node set to use it <em>must</em> first be deployed (with therefore
+      incomplete configuration) before it can be resumed with auto-populated selection
+          lists. An error message will indicate this.
+        </li>
+      <li>Even though the configuration UI allows using different
+      Cloud APIs for different nodes, the underlying library does not
+      currently support multiple concurrent sessions using different
+      sets of credentials. They will instead all use the same,
+        normally the first one that successfully connects.</li>
+      </ul>
+      <h3>Credits</h3>
+    <p>The icon is derived from the <a href="https://thenounproject.com/term/iot/362213/" target="_blank">"Wifi"
+    icon by Peter Borges</a> of The Noun Project.</p>
 </script>

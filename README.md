@@ -84,7 +84,13 @@ thus be changed using the Wirelesstag native web or mobile apps).
   library cannot currently switch between sessions using different
   sets of credentials.
 
+## Credits
+
+The icon is derived from the ["Wifi" icon by Peter Borges] of The Noun
+Project.
+
 [Wireless Tag]: http://wirelesstag.net
 [Wirelesstag web-application]: https://wirelesstag.net/eth/
 [Wirelesstag JSON Web Service API]: http://mytaglist.com/media/mytaglist.com/apidoc.html
 [wirelesstags]: https://github.com/hlapp/wirelesstags-js
+["Wifi" icon by Peter Borges]: https://thenounproject.com/term/iot/362213/
