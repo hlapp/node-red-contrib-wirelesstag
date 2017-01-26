@@ -4,8 +4,6 @@ module.exports = function(RED) {
     "use strict";
 
     var REDx = require('./setup')(RED);
-    var TagUpdater = require('wirelesstags/plugins/polling-updater');
-    var tagUpdaters = {};
 
     const STATUS_CONNECTED = {
         fill:"green",
@@ -37,26 +35,20 @@ module.exports = function(RED) {
         REDx.nodes.createNode(this, config);
         var cloud = RED.nodes.getNode(config.cloud);
         if (cloud) {
-            this.platform = cloud.platform;
-            if (! tagUpdaters[config.cloud]) {
-                this.debug("creating new tag updater");
-                tagUpdaters[config.cloud] = new TagUpdater(this.platform);
-            } else {
-                this.debug("reusing tag updater for " + config.cloud);
-            }
-            this.platform.isConnected().then((connected) => {
+            let platform = cloud.platform;
+            platform.isConnected().then((connected) => {
                 this.status(connected ? STATUS_CONNECTED : STATUS_DISCONNECTED);
                 if (connected) {
                     startSending(this, config);
                 } else {
-                    this.platform.on('connect', () => {
+                    platform.on('connect', () => {
                         this.status(STATUS_CONNECTED);
                         startSending(this, config);
                     });
                 }
             }).catch((err) => {
                 this.status(STATUS_ERROR);
-                this.error(err.stack ? err.stack : err);
+                RED.log.error(err.stack ? err.stack : err);
             });
         } else {
             this.status({ fill:"grey", shape:"dot", text:"no API config" });
@@ -77,17 +69,17 @@ module.exports = function(RED) {
             if (tags.length === 0) throw new Error(NO_TAG + config.tag);
             return tags[0].discoverSensors();
         }).then((sensors) => {
-            let updater = tagUpdaters[config.cloud];
             let sensor = sensors.filter(s => s.sensorType === config.sensor)[0];
             if (! sensor) throw new Error(NO_SENSOR + config.sensor);
+            let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
             let tag = sensor.wirelessTag;
             sendData(node, sensor, config);
             tag.on('data', (tag) => {
                 sendData(node, sensor, config);
             });
-            node.log("starting updates for tag");
-            updater.addTags(tag);
-            updater.startUpdateLoop((err,result) => {
+            node.log("starting updates");
+            tagUpdater.addTags(tag);
+            tagUpdater.startUpdateLoop((err,result) => {
                 if (err) return; // errors are handled elsewhere
                 if (result.value.length === 0) {
                     RED.log.debug("no updates for wirelesstag nodes");
@@ -98,11 +90,11 @@ module.exports = function(RED) {
                 }
             });
             node.on('close', () => {
-                node.log("stopping updates for tag");
-                updater.removeTags(tag);
+                node.log("stopping updates");
+                tagUpdater.removeTags(tag);
             });
         }).catch((err) => {
-            node.error(err.stack ? err.stack : err);
+            RED.log.error(err.stack ? err.stack : err);
         });
     }
 
@@ -134,8 +126,8 @@ module.exports = function(RED) {
             mac: tagMgr.mac,
             online: tagMgr.online
         };
-        node.debug("sending: " + JSON.stringify(msg));
         node.status(STATUS_DATA);
+        node.debug("sending: " + JSON.stringify(msg));
         node.send(msg);
         setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
     }

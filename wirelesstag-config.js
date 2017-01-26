@@ -2,11 +2,13 @@ module.exports = function(RED) {
     "use strict";
 
     var Platform = require('wirelesstags');
+    var TagUpdater = require('wirelesstags/plugins/polling-updater');
 
     /** @constructor */
     function WirelessTagConfig(config) {
         RED.nodes.createNode(this, config);
-        this.platform = new Platform({ apiBaseURI: config.api_uri });
+        this.platform = new Platform({ apiBaseURI: config.apiURI });
+        this.tagUpdater = new TagUpdater(this.platform);
         this.platform.connect(this.credentials).then(() => {
             this.log("connected to Wireless Tag Cloud");
         }).catch((err) => {
