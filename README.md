@@ -41,6 +41,8 @@ For each node, the following parameters are configurable:
 * Optionally, a name for the node. If left empty, the name is
   auto-generated from the tag and sensor names.
 
+### Output
+
 The message sent by the node will have the following properties aside
 from `topic`:
 
@@ -61,7 +63,40 @@ uses.) How frequently new data becomes available for which tag is
 determined by the update interval configured for each tag (and can
 thus be changed using the Wirelesstag native web or mobile apps).
 
-## Caveats and limitations
+### Input
+
+When connected on input, the node inspect `msg.payload` properties to
+set matching tag and sensor configuration properties. To match,
+properties must be in the same structure and of the same type as they
+are output by the node. The following properties are recognized:
+
+* `armed`: arm the sensor if true, and disarm otherwise.
+* `tag.updateInterval`: set the update interval for the tag.
+* `sensorConfig.*`: set the corresponding sensor configuration
+  properties.
+
+Desired payloads can, for example, be injected with the "inject" node,
+or created and set with the "change" node. For example, the following
+as JSON-format payload for the "inject" will change the notification
+sound for the sensor:
+
+```js
+{ "sensorConfig": { "notifySettings": { "sound": "moo" } } }
+```
+
+In the change node, choose "msg." from the selector and the following
+expression for specifying the property:
+
+```js
+sensorConfig.notifySettings.sound
+```
+
+If no matching `msg.payload` property is detected upon receiving
+input, this will instead trigger updating the sensor's data from the
+cloud. If this results in new data, it will generate a message on
+output.
+
+### Caveats and limitations
 
 * Auto-populating the dropdowns for the tag manager, tag, and sensor
   selection requires a live connection made through the [wirelesstags]

@@ -22,7 +22,7 @@
             defaultName: { value: "" }, // this is computed, hidden in UI
             cloud: { value: "", type: "wirelesstag-config" }
         },
-        inputs: 0,
+        inputs: 1,
         outputs: 1,
         icon: "wirelesstag-inv.png",
         label: function() {
@@ -212,17 +212,51 @@
     each event (such as motion detected, temperature too high, etc)
     for armed sensors should also result in data becoming available
       for the corresponding tag shortly thereafter.</p>
+    <h3>Input node</h3>
+      <p>The node can optionally also receive input to trigger changes
+      to a sensor or tag configuration. Properties to set must
+      generally be in the same structure (and of the same type) as
+      they are output by this node, but to prevent unintentionally
+      pushing out stale values, <em>they must be in <code>msg.payload</code></em>.
+      The following structured properties are recognized:
+      <ul>
+        <li><strong><code>armed</code>:</strong> Arm the
+        sensor if true, and disarm otherwise.</li>
+        <li><strong><code>tag.updateInterval</code>:</strong> Set the
+        update interval for the tag (in seconds).</li>
+        <li><strong><code>sensorConfig.*</code>:</strong> Set the
+        corresponding sensor configuration property (or properties).
+        Exact property names and their expected value types can be
+        seen from the message output by the sensor.</li>
+      </ul>
+      If none of these are present in <code>msg.payload</code>, the
+      input will instead be considered as a trigger to update the
+      sensor's data from the cloud.</p>
+      <p>Note that message objects are presently <em>not</em> passed through
+      from input to output. Fixing this is not straightforward because
+      output is at present generated fully asynchronously.</p>
     <h3>Notes and caveats</h3>
       <ul><li>After configuring a <em>new</em> Cloud API connection,
       the node set to use it <em>must</em> first be deployed (with therefore
       incomplete configuration) before it can be resumed with auto-populated selection
           lists. An error message will indicate this.
         </li>
-      <li>Even though the configuration UI allows using different
-      Cloud APIs for different nodes, the underlying library does not
-      currently support multiple concurrent sessions using different
-      sets of credentials. They will instead all use the same,
+        <li>Even though the configuration UI allows using different
+        Cloud APIs for different nodes, the underlying library does not
+        currently support multiple concurrent sessions using different
+        sets of credentials. They will instead all use the same,
         normally the first one that successfully connects.</li>
+        <li>Not all sensors can be armed or disarmed, and attempting
+        to do so anyway will cause an error. For example, the "water"
+        sensor of the moisture tag is always armed, and (currently) can't be
+        disarmed. Sensors that on output don't generate a
+        <code>msg.payload.armed</code> property generally can't be
+        armed.</li>
+        <li>For Wireless Sensor Tags that have an actual
+        <em>motion</em> sensor, the motion sensor can be selected but
+        it is not currently useful, because it is in essence fully redundant
+        with the <em>event</em> sensor. I.e., when armed it is the
+        <em>event</em> sensor, and when disarmed it reports no values.</li>
       </ul>
       <h3>Credits</h3>
     <p>The icon is derived from the <a href="https://thenounproject.com/term/iot/362213/" target="_blank">"Wifi"
