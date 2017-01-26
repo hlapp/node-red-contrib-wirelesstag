@@ -1,11 +1,11 @@
 {
   "name": "node-red-contrib-wirelesstag",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Node-RED node for Wireless Tags (http://wirelesstag.net)",
   "main": "./wirelesstag.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "jshint package.json *.js",
+    "lint": "jshint package.json *.js utils/*.js",
     "pretest": "npm run lint"
   },
   "repository": {
