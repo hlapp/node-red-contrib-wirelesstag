@@ -35,8 +35,7 @@ For each node, the following parameters are configurable:
 * The API connection (email, password, and base URI for the JSON
   Web API server).
 * The tag manager, tag, and sensor for which to report data. The lists
-  of available choices are auto-populated. </strong> for which to
-  report data.
+  of available choices are auto-populated.
 * Optionally, the message topic. If left empty, the topic is
   auto-generated.
 * Optionally, a name for the node. If left empty, the name is
@@ -84,11 +83,25 @@ thus be changed using the Wirelesstag native web or mobile apps).
   library cannot currently switch between sessions using different
   sets of credentials.
 
+## How to support
+
+Aside from reporting issues and contributing pull requests, if you
+plan to buy from Wireless Sensor Tag, you might consider using
+[this link](https://goo.gl/GxwQbZ) to their website. If more than 10
+people do so, and some end up buying, I stand to receive a discount on
+a past purchase of mine, which will allow me to buy other types of
+tags in the future and support those too.
+
 ## Credits
 
 The icon is derived from the ["Wifi" icon by Peter Borges] of The Noun
 Project.
 
+## License
+
+Available under the [MIT License](LICENSE).
+
+[Node-RED]: https://nodered.org
 [Wireless Tag]: http://wirelesstag.net
 [Wirelesstag web-application]: https://wirelesstag.net/eth/
 [Wirelesstag JSON Web Service API]: http://mytaglist.com/media/mytaglist.com/apidoc.html
