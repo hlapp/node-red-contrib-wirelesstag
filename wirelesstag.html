@@ -214,11 +214,13 @@
       for the corresponding tag shortly thereafter.</p>
     <h3>Input node</h3>
       <p>The node can optionally also receive input to trigger changes
-      to a sensor or tag configuration. Properties to set must
-      generally be in the same structure (and of the same type) as
-      they are output by this node, but to prevent unintentionally
-      pushing out stale values, <em>they must be in <code>msg.payload</code></em>.
-      The following structured properties are recognized:
+      to a sensor or tag configuration, or to trigger requesting a
+      data update.</p>
+      <p>Properties to set must generally be in the same structure
+    (<em>and</em> of the same type) as they are output by this node, but to
+    prevent unintentionally pushing out stale values, <em>they must be
+    in <code>msg.payload</code></em>. The following structured
+    properties are recognized:
       <ul>
         <li><strong><code>armed</code>:</strong> Arm the
         sensor if true, and disarm otherwise.</li>
@@ -228,10 +230,13 @@
         corresponding sensor configuration property (or properties).
         Exact property names and their expected value types can be
         seen from the message output by the sensor.</li>
-      </ul>
-      If none of these are present in <code>msg.payload</code>, the
-      input will instead be considered as a trigger to update the
-      sensor's data from the cloud.</p>
+      </ul></p>
+      <p>If none of these are present in <code>msg.payload</code>, the
+      input will instead be considered as a request to update the
+      sensor's data from the cloud. In this case, if <strong><code>msg.payload.immediate</code></strong>
+      evaluates to <code>true</code>, the node will request a live update
+      from the tag. (This requires the actual tag to respond, and may
+      thus take several seconds.)</p>
       <p>Note that message objects are presently <em>not</em> passed through
       from input to output. Fixing this is not straightforward because
       output is at present generated fully asynchronously.</p>

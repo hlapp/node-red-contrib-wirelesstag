@@ -214,7 +214,9 @@ module.exports = function(RED) {
         }
         // if nothing matched as actionable, treat it as trigger to update tag
         if (req.then === sentinel) {
-            req = sensor.wirelessTag.update().then(() => sensor);
+            req = msg.payload.immediate ?
+                sensor.wirelessTag.liveUpdate() : sensor.wirelessTag.update();
+            req = req.then(() => sensor);
         }
         return req;
     }
