@@ -11,6 +11,16 @@ module.exports = function(RED) {
         this.tagUpdater = new TagUpdater(this.platform);
         this.platform.connect(this.credentials).then(() => {
             this.log("connected to Wireless Tag Cloud");
+            tagUpdater.startUpdateLoop((err,result) => {
+                if (err) return; // errors are handled elsewhere
+                if (result.value.length === 0) {
+                    RED.log.debug("no updates for wirelesstag nodes");
+                } else {
+                    let names = result.value.map((d) => d.name).join(", ");
+                    RED.log.debug("new data for " + result.value.length
+                                  + " wirelesstag node(s): " + names);
+                }
+            });
         }).catch((err) => {
             if (err instanceof Platform.UnauthorizedAccessError) {
                 this.error("failed to connect to Wireless Tag API:");

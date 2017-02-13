@@ -44,6 +44,11 @@ module.exports = function(RED) {
     /** @constructor */
     function WirelessTagNode(config) {
         REDx.nodes.createNode(this, config);
+
+        // upgrade existing nodes with defaults for new properties
+        if (config.autoUpdate === undefined) config.autoUpdate = true;
+        // done upgrading existing nodes
+
         var cloud = RED.nodes.getNode(config.cloud);
         if (cloud) {
             let platform = cloud.platform;
@@ -131,21 +136,13 @@ module.exports = function(RED) {
                 sendData(node, sensor, config);
             });
             node.log("starting updates");
-            tagUpdater.addTags(tag);
-            tagUpdater.startUpdateLoop((err,result) => {
-                if (err) return; // errors are handled elsewhere
-                if (result.value.length === 0) {
-                    RED.log.debug("no updates for wirelesstag nodes");
-                } else {
-                    let names = result.value.map((d) => d.name).join(", ");
-                    RED.log.debug("new data for " + result.value.length
-                                  + " wirelesstag node(s): " + names);
-                }
-            });
-            node.on('close', () => {
-                node.log("stopping updates");
-                tagUpdater.removeTags(tag);
-            });
+            if (config.autoUpdate) {
+                tagUpdater.addTags(tag);
+                node.on('close', () => {
+                    node.log("stopping updates");
+                    tagUpdater.removeTags(tag);
+                });
+            }
         }).catch((err) => {
             RED.log.error(err.stack ? err.stack : err);
         });

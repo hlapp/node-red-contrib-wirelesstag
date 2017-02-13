@@ -17,6 +17,7 @@
             tag: { required: true, value: "" },
             sensor: { required: true, value: "" },
             name: { value: "" },
+            autoUpdate: { value: true },
             topic: { value: "" },
             topicIsPrefix: { value: false },
             defaultName: { value: "" }, // this is computed, hidden in UI
@@ -42,6 +43,11 @@
 
             // blank out name input if value is equal to the computed name
             if (this.name === this.defaultName) $("#node-input-name").val('');
+
+            // upgrade existing nodes to defaults of new properties
+            if (node.autoUpdate === undefined) {
+                $("#node-input-autoUpdate").prop("checked", true);
+            }
 
             // on setting (or changing) the cloud connection, repopulate
             // tag manager selection
@@ -140,6 +146,10 @@
         <select type="text" id="node-input-sensor"></select>
     </div>
     <div class="form-row">
+        <label for="node-input-autoUpdate"><i class="fa fa-repeat"></i> Auto-update</label>
+        <input type="checkbox" id="node-input-autoUpdate">
+    </div>
+    <div class="form-row">
         <label for="node-input-topic"><i class="fa fa-tasks"></i> Topic</label>
         <input type="text" id="node-input-topic" placeholder="Default">
     </div>
@@ -170,6 +180,9 @@
       populated automatically upon selecting the tag manager.</li>
       <li>The <strong>Sensor</strong> for which to report data. The
       list of available sensors is auto-populated upon selecting the tag.</li>
+      <li>Whether to <strong>auto-update</strong> the sensor data. If
+      false, updates must be triggered through the input side of the
+      node (see below). Defaults to true.</li>
       <li>The <strong>Topic</strong>. May be left empty, in which
       case the topic is auto-generated
       as <code>tagManager.mac/tag.slaveId/sensor</code>. (The MAC
