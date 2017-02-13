@@ -49,23 +49,34 @@ module.exports = function(RED) {
         if (config.autoUpdate === undefined) config.autoUpdate = true;
         // done upgrading existing nodes
 
-        var cloud = RED.nodes.getNode(config.cloud);
+        let onConnect = (platform) => {
+            this.status(STATUS_CONNECTED);
+            startIO(this, config);
+        }
+
+        let cloud = RED.nodes.getNode(config.cloud);
         if (cloud) {
+            this.status(STATUS_DISCONNECTED);
             let platform = cloud.platform;
-            platform.isConnected().then((connected) => {
-                this.status(connected ? STATUS_CONNECTED : STATUS_DISCONNECTED);
-                if (connected) {
-                    startIO(this, config);
-                } else {
-                    platform.on('connect', () => {
-                        this.status(STATUS_CONNECTED);
-                        startIO(this, config);
-                    });
-                }
-            }).catch((err) => {
-                this.status(STATUS_ERROR);
-                RED.log.error(err.stack ? err.stack : err);
-            });
+            // there are 3 cases to distinguish: (1) platform is currently
+            // connecting, (2) platform is already connected, and (3) platform
+            // is neither connected nor connecting. In cases (1) and (3) we
+            // will watch for the connect event, and in case (2) the connect
+            // event already passed, so we need to just go ahead.
+            if (platform.connecting) {
+                platform.on('connect', onConnect);
+            } else {
+                platform.isConnected().then((connected) => {
+                    if (connected) {
+                        return onConnect(platform);
+                    } else {
+                        platform.on('connect', onConnect);
+                    }
+                }).catch((err) => {
+                    this.status(STATUS_ERROR);
+                    RED.log.error(err.stack ? err.stack : err);
+                });
+            }
         } else {
             this.status(STATUS_NOAPI);
         }
