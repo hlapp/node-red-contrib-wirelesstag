@@ -1,40 +1,45 @@
 /** @module */
 
+const STATUS_CONNECTED = {
+    fill:"green",
+    shape:"dot",
+    text:"node-red:common.status.connected"
+};
+const STATUS_DATA = {
+    fill:"blue",
+    shape:"dot",
+    text:"sending data"
+};
+const STATUS_PROCESSING = {
+    fill:"blue",
+    shape:"ring",
+    text:"processing input"
+};
+const STATUS_DISCONNECTED = {
+    fill:"red",
+    shape:"ring",
+    text:"node-red:common.status.disconnected"
+};
+const STATUS_ERROR = {
+    fill:"red",
+    shape:"dot",
+    text:"node-red:common.status.error"
+};
+const STATUS_NOAPI = {
+    fill:"grey",
+    shape:"dot",
+    text:"no API config"
+};
+
+const NO_TAGMANAGER = "failed to find tag manager with MAC ";
+const NO_TAG = "failed to find tag with UUID ";
+const NO_SENSOR = "specified tag does not have sensor ";
+
 module.exports = function(RED) {
     "use strict";
 
     var REDx = require('./setup')(RED);
     var deepAssign = require('./utils/deep-assign.js');
-
-    const STATUS_CONNECTED = {
-        fill:"green",
-        shape:"dot",
-        text:"node-red:common.status.connected"
-    };
-    const STATUS_DATA = {
-        fill:"blue",
-        shape:"dot",
-        text:"sending data"
-    };
-    const STATUS_PROCESSING = {
-        fill:"blue",
-        shape:"ring",
-        text:"processing input"
-    };
-    const STATUS_DISCONNECTED = {
-        fill:"red",
-        shape:"ring",
-        text:"node-red:common.status.disconnected"
-    };
-    const STATUS_ERROR = {
-        fill:"red",
-        shape:"dot",
-        text:"node-red:common.status.error"
-    };
-
-    const NO_TAGMANAGER = "failed to find tag manager with MAC ";
-    const NO_TAG = "failed to find tag with UUID ";
-    const NO_SENSOR = "specified tag does not have sensor ";
 
     /** @constructor */
     function WirelessTagNode(config) {
@@ -57,7 +62,7 @@ module.exports = function(RED) {
                 RED.log.error(err.stack ? err.stack : err);
             });
         } else {
-            this.status({ fill:"grey", shape:"dot", text:"no API config" });
+            this.status(STATUS_NOAPI);
         }
     }
 
