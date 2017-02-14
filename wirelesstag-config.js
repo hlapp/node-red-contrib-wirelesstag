@@ -21,6 +21,10 @@ module.exports = function(RED) {
                                   + " wirelesstag node(s): " + names);
                 }
             });
+            this.on('close', () => {
+                this.log("stopping tag updater");
+                this.tagUpdater.stopUpdateLoop();
+            });
         }).catch((err) => {
             if (err instanceof Platform.UnauthorizedAccessError) {
                 this.error("failed to connect to Wireless Tag API:");
