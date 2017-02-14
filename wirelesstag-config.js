@@ -11,7 +11,7 @@ module.exports = function(RED) {
         this.tagUpdater = new TagUpdater(this.platform);
         this.platform.connect(this.credentials).then(() => {
             this.log("connected to Wireless Tag Cloud");
-            tagUpdater.startUpdateLoop((err,result) => {
+            this.tagUpdater.startUpdateLoop((err,result) => {
                 if (err) return; // errors are handled elsewhere
                 if (result.value.length === 0) {
                     RED.log.debug("no updates for wirelesstag nodes");
