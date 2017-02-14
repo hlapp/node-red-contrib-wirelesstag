@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-wirelesstag",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Node-RED node for Wireless Tags (http://wirelesstag.net)",
   "main": "./wirelesstag.js",
   "scripts": {
@@ -30,7 +30,7 @@
     }
   },
   "dependencies": {
-    "wirelesstags": "^0.5.3"
+    "wirelesstags": "^0.5.6"
   },
   "devDependencies": {
     "jshint": "^2.9.4"
