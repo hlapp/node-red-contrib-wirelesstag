@@ -57,7 +57,8 @@ module.exports = function(RED) {
 
     function startSending(node, config) {
         if (! config) config = node.config;
-        node.platform.discoverTagManagers().then((managers) => {
+        let platform = RED.nodes.getNode(config.cloud).platform;
+        platform.discoverTagManagers().then((managers) => {
             managers = managers.filter((m) => {
                 return m.mac === config.tagmanager;
             });
