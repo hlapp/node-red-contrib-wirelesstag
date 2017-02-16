@@ -85,7 +85,7 @@ module.exports = function(RED) {
     function findTag(node, config) {
         if (! config) config = node.config;
         let context = node.context();
-        let tag = context.get(config.tag);
+        let tag = config.tag ? context.get(config.tag) : undefined;
         let findReq;
         if (tag) {
             findReq = Promise.resolve(tag);

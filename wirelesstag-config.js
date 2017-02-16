@@ -11,7 +11,7 @@ module.exports = function(RED) {
         this.tagUpdater = new TagUpdater(this.platform);
         this.platform.connect(this.credentials).then(() => {
             this.log("connected to Wireless Tag Cloud");
-            tagUpdater.startUpdateLoop((err,result) => {
+            this.tagUpdater.startUpdateLoop((err,result) => {
                 if (err) return; // errors are handled elsewhere
                 if (result.value.length === 0) {
                     RED.log.debug("no updates for wirelesstag nodes");
@@ -20,6 +20,10 @@ module.exports = function(RED) {
                     RED.log.debug("new data for " + result.value.length
                                   + " wirelesstag node(s): " + names);
                 }
+            });
+            this.on('close', () => {
+                this.log("stopping tag updater");
+                this.tagUpdater.stopUpdateLoop();
             });
         }).catch((err) => {
             if (err instanceof Platform.UnauthorizedAccessError) {
