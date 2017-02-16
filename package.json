@@ -30,7 +30,7 @@
     }
   },
   "dependencies": {
-    "wirelesstags": "^0.5.6"
+    "wirelesstags": "^0.6.0"
   },
   "devDependencies": {
     "jshint": "^2.9.4"
