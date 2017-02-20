@@ -1,6 +1,8 @@
 "use strict";
 
 module.exports = function(RED) {
+
+    // a function to override RED.nodes.createNode to add missing pieces
     function createNode(node, def) {
         RED.nodes.createNode(node, def);
 

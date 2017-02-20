@@ -49,10 +49,19 @@ module.exports = function(RED) {
         if (config.autoUpdate === undefined) config.autoUpdate = true;
         // done upgrading existing nodes
 
+        // set up member methods
+        this.startIO = startIO;
+        this.findTag = findTag;
+        this.registerTag = registerTag;
+        this.sendData = sendData;
+        this.sendSensorData = sendSensorData;
+        this.processInput = processInput;
+        // done setting up member methods
+
         let onConnect = (platform) => {
             this.status(STATUS_CONNECTED);
-            startIO(this, config);
-        }
+            this.startIO();
+        };
 
         let cloud = RED.nodes.getNode(config.cloud);
         if (cloud) {
@@ -82,9 +91,9 @@ module.exports = function(RED) {
         }
     }
 
-    function findTag(node, config) {
-        if (! config) config = node.config;
-        let context = node.context();
+    function findTag(config) {
+        if (! config) config = this.config;
+        let context = this.context();
         let tag = config.tag ? context.get(config.tag) : undefined;
         let findReq;
         if (tag) {
@@ -97,7 +106,7 @@ module.exports = function(RED) {
             }).then((tags) => {
                 if (tags.length === 0) throw new Error(NO_TAG + config.tag);
                 context.set(tags[0].uuid, tags[0]);
-                node.on('close', () => {
+                this.on('close', () => {
                     context.set(tags[0].uuid, undefined);
                 });
                 return tags[0];
@@ -106,58 +115,66 @@ module.exports = function(RED) {
         return findReq;
     }
 
-    function findSensor(node, config) {
-        if (! config) config = node.config;
-        let findReq = findTag(node, config).then((tag) => {
-            return tag.discoverSensors();
-        }).then((sensors) => {
-            let sensor = sensors.filter(s => s.sensorType === config.sensor)[0];
-            if (! sensor) throw new Error(NO_SENSOR + config.sensor);
-            return sensor;
-        });
-        return findReq;
-    }
-
-    function startIO(node, config) {
-        startSending(node, config);
-        node.on('input', (msg) => {
-            findSensor(node, config).then((sensor) => {
-                node.status(STATUS_PROCESSING);
-                return processIncomingMsg(msg, sensor);
-            }).catch((err) => {
-                node.error("error processing message: " + err, msg);
-            }).then(() => {
-                node.status(STATUS_CONNECTED);
-            });
-        });
-    }
-
-    function startSending(node, config) {
-        if (! config) config = node.config;
-        let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
-        findSensor(node, config).then((sensor) => {
-            let tag = sensor.wirelessTag;
-            sendData(node, sensor, config);
-            tag.on('data', (tag) => {
-                sendData(node, sensor, config);
-            });
+    function startIO(node) {
+        if (! node) node = this;
+        let config = node.config;
+        if (config.tag) {
             node.log("starting updates");
-            if (config.autoUpdate) {
-                tagUpdater.addTags(tag);
-                node.on('close', () => {
-                    node.log("stopping updates");
-                    tagUpdater.removeTags(tag);
-                });
+            node.findTag(config).then((tag) => {
+                node.registerTag(tag);
+                // send an initial message with current readings
+                node.sendData(tag);
+            }).catch((err) => {
+                RED.log.error(err.stack ? err.stack : err);
+            });
+        } else if (config.autoDiscover) {
+            node.log("starting updates (auto-discovery mode)");
+            let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
+            tagUpdater.discoveryMode = true;
+            node.on('close', () => {
+                node.log("stopping auto-discovery mode updates");
+                tagUpdater.discoveryMode = false;
+            });
+        }
+        node.on('input', processInput.bind(node));
+    }
+
+    function registerTag(tag) {
+        let node = this;
+        let config = node.config;
+        tag.on('data', sendData.bind(node));
+        if (config.autoUpdate) {
+            let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
+            tagUpdater.addTags(tag);
+            node.on('close', () => {
+                node.log("stopping updates");
+                tagUpdater.removeTags(tag);
+            });
+        }
+    }
+
+    function sendData(tag) {
+        let node = this;
+        let config = node.config;
+        tag.discoverSensors().then((sensors) => {
+            if (config.sensor) {
+                sensors = sensors.filter(s => s.sensorType === config.sensor);
+                if (sensors.length === 0) {
+                    throw new Error(NO_SENSOR + config.sensor);
+                }
             }
-        }).catch((err) => {
-            RED.log.error(err.stack ? err.stack : err);
+            node.status(STATUS_DATA);
+            sensors.forEach( (sensor) => node.sendSensorData(sensor) );
+            setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
         });
     }
 
-    function sendData(node, sensor, config) {
-        if (! config) config = node.config;
+    function sendSensorData(sensor) {
+        let node = this;
+        let config = node.config;
         let msg = {
             payload: {
+                sensor: sensor.sensorType,
                 reading: sensor.reading,
                 eventState: sensor.eventState,
                 armed: sensor.isArmed()
@@ -182,24 +199,49 @@ module.exports = function(RED) {
             mac: tagMgr.mac,
             online: tagMgr.online
         };
-        node.status(STATUS_DATA);
         node.debug("sending: " + JSON.stringify(msg));
         node.send(msg);
-        setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
     }
 
-    function processIncomingMsg(msg, sensor) {
-        let sentinel = (success) => success(sensor);
-        let req = { then: sentinel };
+    function processInput(msg) {
+        let node = this;
+        let config = node.config;
+        if (! config.tag) {
+            if ((msg.tag.uuid || msg.tag.slaveId) === undefined) {
+                node.error("tag not specified in input, cannot process", msg);
+                return;
+            }
+            config = {
+                tag: msg.tag.uuid || msg.tag.slaveId,
+                tagmanager: msg.tagManager.mac,
+                sensor: msg.payload.sensor
+            };
+        }
+        let findReq = node.findTag(config).then(tag => tag.discoverSensors());
+        findReq.then((sensors) => {
+            if (config.sensor) {
+                sensors = sensors.filter( s => s.sensorType === config.sensor );
+            }
+            let tag = sensors[0].wirelessTag;
+            let sensor = sensors.length === 1 ? sensors[0] : undefined;
+            node.status(STATUS_PROCESSING);
+            processIncomingMsg(msg, sensor, tag);
+        }).catch((err) => {
+            node.error("error processing message: " + err, msg);
+        }).then(() => {
+            node.status(STATUS_CONNECTED);
+        });
+    }
 
-        // Note: Below we convert for each possible action the value
-        // that a promise finally resolves to the sensor object. This
-        // is solely for defensive consistency, and not because
-        // anything at present relies on it.
+    function processIncomingMsg(msg, sensor, tag) {
+        let sentinel = (success) => success(sensor);
+        let req = { 'then': sentinel, 'catch': function() {}};
+        if (! tag) tag = sensor.wirelessTag;
 
         // arm/disarm sensor if requested
         if (msg.payload.armed !== undefined) {
             req = req.then(() => {
+                if (! sensor) throw new Error("must give sensor for arm/disarm");
                 return msg.payload.armed ? sensor.arm() : sensor.disarm();
             });
         }
@@ -207,24 +249,23 @@ module.exports = function(RED) {
         let sensorProps = msg.payload.sensorConfig;
         if (sensorProps) {
             req = req.then(() => {
+                if (! sensor) throw new Error("must give sensor for updating sensor config");
                 return sensor.monitoringConfig().update();
             }).then((config) => {
                 return deepAssign(config, sensorProps).save();
-            }).then(() => sensor);
+            });
         }
         // update tag properties if requested - currently only updateInterval
         let tagProps = msg.payload.tag || msg.tag;
         let newValue = tagProps ? tagProps.updateInterval : undefined;
-        if (newValue) {
+        if (newValue !== undefined) {
             req = req.then(() => {
-                return sensor.wirelessTag.setUpdateInterval(newValue);
-            }).then(() => sensor);
+                return tag.setUpdateInterval(newValue);
+            });
         }
         // if nothing matched as actionable, treat it as trigger to update tag
         if (req.then === sentinel) {
-            req = msg.payload.immediate ?
-                sensor.wirelessTag.liveUpdate() : sensor.wirelessTag.update();
-            req = req.then(() => sensor);
+            req = msg.payload.immediate ? tag.liveUpdate() : tag.update();
         }
         return req;
     }
