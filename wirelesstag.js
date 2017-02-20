@@ -91,14 +91,9 @@ module.exports = function(RED) {
             findReq = Promise.resolve(tag);
         } else {
             let platform = RED.nodes.getNode(config.cloud).platform;
-            findReq = platform.discoverTagManagers().then((managers) => {
-                managers = managers.filter((m) => {
-                    return m.mac === config.tagmanager;
-                });
-                if (managers.length === 0) {
-                    throw new Error(NO_TAGMANAGER + config.tagmanager);
-                }
-                return managers[0].discoverTags({ uuid: config.tag });
+            findReq = platform.findTagManager(config.tagmanager).then((mgr) => {
+                if (! mgr) throw new Error(NO_TAGMANAGER + config.tagmanager);
+                return mgr.discoverTags({ uuid: config.tag });
             }).then((tags) => {
                 if (tags.length === 0) throw new Error(NO_TAG + config.tag);
                 context.set(tags[0].uuid, tags[0]);
