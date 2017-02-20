@@ -11,7 +11,7 @@
 
     RED.nodes.registerType('wirelesstag', {
         category: 'hardware',
-        color: '#a6bbcf',
+        color: '#3FADB5',
         defaults: {
             tagmanager: { required: true, value: "" },
             tag: { required: true, value: "" },
@@ -26,6 +26,7 @@
         inputs: 1,
         outputs: 1,
         icon: "wirelesstag-inv.png",
+        paletteLabel: "wirelesstag-s",
         label: function() {
             if (this.name) return this.name;
             if (this.defaultName) return this.defaultName;
@@ -126,6 +127,39 @@
         }
     });
 
+    RED.nodes.registerType('wirelesstag-all', {
+        category: 'hardware',
+        color: '#3FADF8',
+        defaults: {
+            name: { value: "" },
+            topic: { value: "" },
+            topicIsPrefix: { value: false },
+            cloud: { value: "", type: "wirelesstag-config" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "wirelesstag-inv.png",
+        label: function() {
+            if (this.name) return this.name;
+            return "Wireless Tag - All";
+        },
+        paletteLabel: "wirelesstag-a",
+        oneditprepare: function() {
+            var prefix;
+
+            // if a topic is entered manually, ask whether it is to be
+            // used as a prefix
+            $("#node-input-topic").on("change", function(evt) {
+                var topic = $(evt.target).val();
+                if (topic) {
+                    $("#node-all-topicIsPrefix").show();
+                } else {
+                    $("#node-all-topicIsPrefix").hide();
+                }
+            });
+        },
+    });
+
 </script>
 
 <script type="text/x-red" data-template-name="wirelesstag">
@@ -165,9 +199,30 @@
     </div>
 </script>
 
+<script type="text/x-red" data-template-name="wirelesstag-all">
+    <div class="form-row">
+        <label for="node-input-cloud"><i class="fa fa-globe"></i> Cloud (API)</label>
+        <input type="text" id="node-input-cloud">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Default">
+    </div>
+    <div class="form-row" id="node-all-topicIsPrefix">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-topicIsPrefix" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-topicIsPrefix" style="width: 70%;"> Use as prefix?</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Default">
+        <input type="hidden" id="node-input-defaultName">
+    </div>
+</script>
+
 <script type="text/x-red" data-help-name="wirelesstag">
-    <p>A node that represents the sensor of a Wireless Tag (see <a
-    href="http://wirelesstag.net" target="_blank">http://wirelesstag.net</a>)</p>
+    <p>A node that represents an individual sensor of a <a
+    href="http://wirelesstag.net" target="_blank">Wireless Sensor Tag</a>.</p>
     <p>This node communicates with the <a href="http://mytaglist.com/media/mytaglist.com/apidoc.html" target="_blank">JSON Web Service API</a>
       using the <a href="https://github.com/hlapp/wirelesstags-js" target="_blank">wirelesstags</a> NodeJS package.</p>
     <h3>Configuration</h3>
@@ -279,4 +334,84 @@
       <h3>Credits</h3>
     <p>The icon is derived from the <a href="https://thenounproject.com/term/iot/362213/" target="_blank">"Wifi"
     icon by Peter Borges</a> of The Noun Project.</p>
+</script>
+
+<script type="text/x-red" data-help-name="wirelesstag-all">
+    <p>A node that represents the collection of all <a
+    href="http://wirelesstag.net" target="_blank">Wireless Sensor Tags</a>
+    (and their sensors) to which the connected account has access.</p>
+    <p>This node communicates with the <a href="http://mytaglist.com/media/mytaglist.com/apidoc.html" target="_blank">JSON Web Service API</a>
+      using the <a href="https://github.com/hlapp/wirelesstags-js" target="_blank">wirelesstags</a> NodeJS package.</p>
+    <h3>Configuration</h3>
+    <p>The following parameters are configurable:
+    <ul><li>The JSON Web Service (Cloud) <strong>API connection</strong>. Currently
+    this requires a username (an email address) and a password.</li>
+      <li>The <strong>Topic</strong>. If left empty the topic is auto-generated
+      as <code>tagManager.mac/tag.slaveId/sensor</code>, which is unique for
+      each sensor. (The MAC of the tag manager is its unique serial number.
+      Each tag associated with a tag manager is assigned a number between
+        0-255, its <code>slaveId</code>.)</li>
+      <li>Whether to use the topic as a prefix. If yes, instead of
+      replacing the auto-generated topic,  it is used to prefix
+        the auto-generated value.</li>
+      <li>Optionally, a <strong>Name</strong> for the node.</li>
+    </ul></p>
+    <h3>Outgoing message</h3>
+    <p>The node will send the following message for each sensor of every tag
+    for which the polling API endpoint reports a data update. (The API endpoint
+    does not report for which of the tag's sensors new data are available.)
+      <ul>
+        <li><strong><code>msg.payload</code></strong> with
+        properties <code>sensor</code> (the sensor's type, such as light),
+        <code>reading</code> (the sensor's current reading),
+        <code>eventState</code> (the current state, such as <em>Normal</em>, <em>Too High</em>, etc),
+        and <code>armed</code> (true if the sensor is armed and false otherwise).</li>
+        <li><strong><code>msg.sensorConfig</code></strong>: the
+        properties of the monitoring configuration for the
+        sensor. Properties will depend on the sensor.</li>
+        <li><strong><code>msg.tag</code></strong>: additional
+        properties of the tag
+        (<code>name</code>, <code>uuid</code>, <code>slaveId</code>, <code>alive</code>,
+        and <code>updateInterval</code>).</li>
+        <li><strong><code>tagManager</code></strong>: additional
+        properties of the tag manager with which the tag is
+        associated (<code>name</code>, <code>mac</code>, and <code>online</code>).</li>
+      </ul>
+      </p>
+    <h3>Input node</h3>
+      <p>The node can optionally also receive input to trigger changes
+      to a sensor or tag configuration, or to force a
+      data update from a tag.</p>
+      <p>The node will determine which tag and which sensor to operate on from
+      the message properties. Messages emitted from this node have the
+      necessary properties, and hence should be used as the basis for feeding
+      input (by modifying the <code>msg.payload</code>) back to this node.
+      The following structured payload properties are recognized:
+      <ul>
+        <li><strong><code>armed</code>:</strong> Arm the
+        sensor if true, and disarm otherwise.</li>
+        <li><strong><code>tag.updateInterval</code>:</strong> Set the
+        update interval for the tag (in seconds).</li>
+        <li><strong><code>sensorConfig.*</code>:</strong> Set the
+        corresponding sensor configuration property (or properties).
+        Exact property names and their expected value types can be
+        seen from the message output by the sensor.</li>
+      </ul></p>
+      <p>If none of these are present in <code>msg.payload</code>, the
+      input will instead be treated as a request to force an immediate (live)
+      update from the tag. (This requires the actual tag to respond, and may
+      thus take several seconds.)</p>
+    <h3>Notes, caveats, credits</h3>
+    <ul>
+      <li>If you use both this node and wirelesstag-s nodes (for an individual
+      sensor of a specified tag), then the tags for those sensors are not
+      reported to this node, and therefore this node will not report their
+      other sensors.</li>
+      <li>Until concurrent connections with different credentials are
+      supported, there is no point in having more than one node of this kind
+      in a flow.</li>
+      <li>Message objects are presently <em>not</em> passed through
+      from input to output.</li>
+      </ul>
+      <p>See the wirelesstag-s node for more details.</p>
 </script>

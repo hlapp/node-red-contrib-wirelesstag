@@ -91,6 +91,17 @@ module.exports = function(RED) {
         }
     }
 
+    /** @constructor */
+    function WirelessTagDiscoveryNode(config) {
+        WirelessTagNode.call(this, config);
+
+        // delete options that don't pertain here
+        delete config.autoUpdate;
+
+        // add defaults for this node
+        config.autoDiscover = true;
+    }
+
     function findTag(config) {
         if (! config) config = this.config;
         let context = this.context();
@@ -130,10 +141,13 @@ module.exports = function(RED) {
         } else if (config.autoDiscover) {
             node.log("starting updates (auto-discovery mode)");
             let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
+            let dataHandler = sendData.bind(node);
+            tagUpdater.on('data', dataHandler);
             tagUpdater.discoveryMode = true;
             node.on('close', () => {
                 node.log("stopping auto-discovery mode updates");
                 tagUpdater.discoveryMode = false;
+                tagUpdater.removeListener('data', dataHandler);
             });
         }
         node.on('input', processInput.bind(node));
@@ -216,11 +230,16 @@ module.exports = function(RED) {
                 tagmanager: msg.tagManager.mac,
                 sensor: msg.payload.sensor
             };
+            // in auto-discover mode we default to immediate updates
+            // because the polling API already gets updates from the cloud
+            if (config.autoDiscover && msg.payload.immediate !== false) {
+                msg.payload.immediate = true;
+            }
         }
         let findReq = node.findTag(config).then(tag => tag.discoverSensors());
         findReq.then((sensors) => {
             if (config.sensor) {
-                sensors = sensors.filter( s => s.sensorType === config.sensor );
+                sensors = sensors.filter(s => s.sensorType === config.sensor);
             }
             let tag = sensors[0].wirelessTag;
             let sensor = sensors.length === 1 ? sensors[0] : undefined;
@@ -271,4 +290,5 @@ module.exports = function(RED) {
     }
 
     RED.nodes.registerType("wirelesstag", WirelessTagNode);
+    RED.nodes.registerType("wirelesstag-all", WirelessTagDiscoveryNode);
 };
