@@ -113,7 +113,8 @@ module.exports = function(RED) {
             let platform = RED.nodes.getNode(config.cloud).platform;
             findReq = platform.findTagManager(config.tagmanager).then((mgr) => {
                 if (! mgr) throw new Error(NO_TAGMANAGER + config.tagmanager);
-                return mgr.discoverTags({ uuid: config.tag });
+                let qkey = typeof config.tag === "string" ? "uuid" : "slaveId";
+                return mgr.discoverTags({ [qkey]: config.tag });
             }).then((tags) => {
                 if (tags.length === 0) throw new Error(NO_TAG + config.tag);
                 context.set(tags[0].uuid, tags[0]);
