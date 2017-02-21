@@ -228,7 +228,8 @@ module.exports = function(RED) {
             config = {
                 tag: msg.tag.uuid || msg.tag.slaveId,
                 tagmanager: msg.tagManager.mac,
-                sensor: msg.payload.sensor
+                sensor: msg.payload.sensor,
+                cloud: config.cloud
             };
             // in auto-discover mode we default to immediate updates
             // because the polling API already gets updates from the cloud
