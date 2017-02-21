@@ -28,9 +28,13 @@
         icon: "wirelesstag-inv.png",
         paletteLabel: "wirelesstag-s",
         label: function() {
-            if (this.name) return this.name;
-            if (this.defaultName) return this.defaultName;
-            return "Wireless Tag";
+            let l = "Wireless Tag";
+            if (this.name) {
+                l = this.name;
+            } else if (this.defaultName) {
+                l = this.defaultName;
+            }
+            return this.autoUpdate ? l + " ↻" : l;
         },
         oneditprepare: function() {
             var mountpoint = "wirelesstag";
