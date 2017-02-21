@@ -1,5 +1,7 @@
 # node-red-contrib-wirelesstag
 
+![Wireless Sensor Tag nodes in palette](assets/wirelesstag_node-red-palette.png)
+
 Two nodes (_wirelesstag-s_ and _wirelesstag-a_) for [Node-RED] that access
 [Wireless Sensor Tags] and their sensors. One (_wirelesstag-s_) represents an
 individual sensor on a specified tag, and will output data from only that
@@ -7,6 +9,8 @@ sensor. The other node (_wirelesstag-a_) represents the whole collection of
 tags (and thus their sensors) accessible to the authenticated account. It
 outputs data for any tag (and all its sensors) reported by the API server as
 having an update available.
+
+![Wireless Sensor Tag nodes in a flow](assets/wirelesstag_node-red-flow.png)
 
 Nodes communicate with the [Wirelesstag JSON Web Service API] using the
 [wirelesstags] NodeJS package.
