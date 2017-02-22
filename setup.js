@@ -1,5 +1,9 @@
 "use strict";
 
+// need to disable 'node' as an allowed alias for this, even though below
+// 'node' and 'this' are in essence the same - just the assignment is missing
+/* eslint consistent-this: ["error", "self"] */
+
 module.exports = function(RED) {
 
     // a function to override RED.nodes.createNode to add missing pieces
@@ -7,7 +11,7 @@ module.exports = function(RED) {
         RED.nodes.createNode(node, def);
 
         // add the missing Node.debug()
-        if (! node.debug) { 
+        if (! node.debug) {
             node.debug = function(msg) {
                 // the following is adapted from the (unfortunately unexposed)
                 // log_helper() in node-red/red/runtime/nodes/Node.js

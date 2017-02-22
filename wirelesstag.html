@@ -1,5 +1,9 @@
 <script type="text/javascript">
 
+    /* eslint-env browser, jquery */
+    /* eslint-disable strict */
+    /* global RED */
+
     function defaultNameFromUI() {
         var tagName = $("#node-input-tag option:selected").text();
         var sensor = $("#node-input-sensor option:selected").text();
@@ -57,7 +61,7 @@
             // on setting (or changing) the cloud connection, repopulate
             // tag manager selection
             $("#node-input-cloud").on("change", function(evt) {
-                var cloud = $("#node-input-cloud").val();
+                var cloud = $(evt.target).val();
                 if (cloud === "_ADD_") return;
                 prefix = mountpoint + "/" + cloud;
                 $.get(prefix + "/tagmanagers", function(tagManagers) {
@@ -102,7 +106,7 @@
                 if (uuid === null) return;
                 var mac = $("#node-input-tagmanager").val();
                 var selSensor = $("#node-input-sensor").val() || node.sensor;
-                $.get(prefix +"/"+ mac +"/"+ uuid +"/sensors", function(sensors) {                    
+                $.get(prefix +"/"+ mac +"/"+ uuid +"/sensors", function(sensors) {
                     $("#node-input-sensor").empty();
                     sensors.forEach(function(s) {
                         $("#node-input-sensor").append('<option value="'+s+'">'+s+'</option>');
@@ -149,8 +153,6 @@
         },
         paletteLabel: "wirelesstag-a",
         oneditprepare: function() {
-            var prefix;
-
             // if a topic is entered manually, ask whether it is to be
             // used as a prefix
             $("#node-input-topic").on("change", function(evt) {
@@ -161,7 +163,7 @@
                     $("#node-all-topicIsPrefix").hide();
                 }
             });
-        },
+        }
     });
 
 </script>

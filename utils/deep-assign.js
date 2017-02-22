@@ -1,10 +1,12 @@
-"use strict";
+/* eslint strict: ["error", "function"] */
 
 module.exports = function deepAssign(target, source) {
+    "use strict";
+
     if (! (target && source)) return target;
     Object.keys(source).forEach((p) => {
         // ignore properties that do not exist in the target
-        if (! target.hasOwnProperty(p)) return;
+        if (! Object.prototype.hasOwnProperty.call(target, p)) return;
         let sval = source[p];
         // ignore functions
         if ('function' === typeof value) return;

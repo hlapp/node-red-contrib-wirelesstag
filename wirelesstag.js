@@ -1,34 +1,36 @@
+"use strict";
+
 /** @module */
 
 const STATUS_CONNECTED = {
-    fill:"green",
-    shape:"dot",
-    text:"node-red:common.status.connected"
+    fill: "green",
+    shape: "dot",
+    text: "node-red:common.status.connected"
 };
 const STATUS_DATA = {
-    fill:"blue",
-    shape:"dot",
-    text:"sending data"
+    fill: "blue",
+    shape: "dot",
+    text: "sending data"
 };
 const STATUS_PROCESSING = {
-    fill:"blue",
-    shape:"ring",
-    text:"processing input"
+    fill: "blue",
+    shape: "ring",
+    text: "processing input"
 };
 const STATUS_DISCONNECTED = {
-    fill:"red",
-    shape:"ring",
-    text:"node-red:common.status.disconnected"
+    fill: "red",
+    shape: "ring",
+    text: "node-red:common.status.disconnected"
 };
 const STATUS_ERROR = {
-    fill:"red",
-    shape:"dot",
-    text:"node-red:common.status.error"
+    fill: "red",
+    shape: "dot",
+    text: "node-red:common.status.error"
 };
 const STATUS_NOAPI = {
-    fill:"grey",
-    shape:"dot",
-    text:"no API config"
+    fill: "grey",
+    shape: "dot",
+    text: "no API config"
 };
 
 const NO_TAGMANAGER = "failed to find tag manager with MAC ";
@@ -36,8 +38,6 @@ const NO_TAG = "failed to find tag with UUID ";
 const NO_SENSOR = "specified tag does not have sensor ";
 
 module.exports = function(RED) {
-    "use strict";
-
     var REDx = require('./setup')(RED);
     var deepAssign = require('./utils/deep-assign.js');
 
@@ -58,7 +58,7 @@ module.exports = function(RED) {
         this.processInput = processInput;
         // done setting up member methods
 
-        let onConnect = (platform) => {
+        let onConnect = () => {
             this.status(STATUS_CONNECTED);
             this.startIO();
         };
@@ -76,11 +76,8 @@ module.exports = function(RED) {
                 platform.on('connect', onConnect);
             } else {
                 platform.isConnected().then((connected) => {
-                    if (connected) {
-                        return onConnect(platform);
-                    } else {
-                        platform.on('connect', onConnect);
-                    }
+                    if (connected) return onConnect(platform);
+                    platform.on('connect', onConnect);
                 }).catch((err) => {
                     this.status(STATUS_ERROR);
                     RED.log.error(err.stack ? err.stack : err);
@@ -102,6 +99,7 @@ module.exports = function(RED) {
         config.autoDiscover = true;
     }
 
+    /* eslint-disable no-invalid-this */
     function findTag(config) {
         if (! config) config = this.config;
         let context = this.context();
@@ -173,13 +171,13 @@ module.exports = function(RED) {
         let config = node.config;
         tag.discoverSensors().then((sensors) => {
             if (config.sensor) {
-                sensors = sensors.filter(s => s.sensorType === config.sensor);
+                sensors = sensors.filter((s) => s.sensorType === config.sensor);
                 if (sensors.length === 0) {
                     throw new Error(NO_SENSOR + config.sensor);
                 }
             }
             node.status(STATUS_DATA);
-            sensors.forEach( (sensor) => node.sendSensorData(sensor) );
+            sensors.forEach((sensor) => node.sendSensorData(sensor));
             setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
         });
     }
@@ -217,7 +215,9 @@ module.exports = function(RED) {
         node.debug("sending: " + JSON.stringify(msg));
         node.send(msg);
     }
+    /* eslint-enable no-invalid-this */
 
+    /* eslint-disable no-invalid-this */
     function processInput(msg) {
         let node = this;
         let config = node.config;
@@ -238,10 +238,10 @@ module.exports = function(RED) {
                 msg.payload.immediate = true;
             }
         }
-        let findReq = node.findTag(config).then(tag => tag.discoverSensors());
+        let findReq = node.findTag(config).then((tag) => tag.discoverSensors());
         findReq.then((sensors) => {
             if (config.sensor) {
-                sensors = sensors.filter(s => s.sensorType === config.sensor);
+                sensors = sensors.filter((s) => s.sensorType === config.sensor);
             }
             let tag = sensors[0].wirelessTag;
             let sensor = sensors.length === 1 ? sensors[0] : undefined;
@@ -253,10 +253,11 @@ module.exports = function(RED) {
             node.status(STATUS_CONNECTED);
         });
     }
+    /* eslint-enable no-invalid-this */
 
     function processIncomingMsg(msg, sensor, tag) {
         let sentinel = (success) => success(sensor);
-        let req = { 'then': sentinel, 'catch': function() {}};
+        let req = { 'then': sentinel, 'catch': () => {} };
         if (! tag) tag = sensor.wirelessTag;
 
         // arm/disarm sensor if requested
@@ -272,17 +273,13 @@ module.exports = function(RED) {
             req = req.then(() => {
                 if (! sensor) throw new Error("must give sensor for updating sensor config");
                 return sensor.monitoringConfig().update();
-            }).then((config) => {
-                return deepAssign(config, sensorProps).save();
-            });
+            }).then((config) => deepAssign(config, sensorProps).save());
         }
         // update tag properties if requested - currently only updateInterval
         let tagProps = msg.payload.tag || msg.tag;
         let newValue = tagProps ? tagProps.updateInterval : undefined;
         if (newValue !== undefined) {
-            req = req.then(() => {
-                return tag.setUpdateInterval(newValue);
-            });
+            req = req.then(() => tag.setUpdateInterval(newValue));
         }
         // if nothing matched as actionable, treat it as trigger to update tag
         if (req.then === sentinel) {

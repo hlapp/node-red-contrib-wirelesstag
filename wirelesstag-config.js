@@ -1,5 +1,6 @@
+"use strict";
+
 module.exports = function(RED) {
-    "use strict";
 
     var Platform = require('wirelesstags');
     var TagUpdater = require('wirelesstags/plugins/polling-updater');
@@ -11,7 +12,7 @@ module.exports = function(RED) {
         this.tagUpdater = new TagUpdater(this.platform);
         this.platform.connect(this.credentials).then(() => {
             this.log("connected to Wireless Tag Cloud");
-            this.tagUpdater.startUpdateLoop((err,result) => {
+            this.tagUpdater.startUpdateLoop((err, result) => {
                 if (err) return; // errors are handled elsewhere
                 if (result.value.length === 0) {
                     RED.log.debug("no updates for wirelesstag nodes");
@@ -61,27 +62,23 @@ module.exports = function(RED) {
         app.get(prefix + '/tagmanagers', (req, res) => {
             cloud.platform.discoverTagManagers().then((managers) => {
                 let macMap = {};
-                managers.forEach((mgr) => { macMap[mgr.mac] = mgr.name; });
+                managers.forEach((mgr) => { macMap[mgr.mac] = mgr.name });
                 res.send(macMap);
             }).catch(apiError(res));
         });
         app.get(prefix + '/:mgr/tags', (req, res) => {
             cloud.platform.discoverTagManagers().then((managers) => {
-                managers = managers.filter((m) => {
-                    return m.mac === req.params.mgr;
-                });
+                managers = managers.filter((m) => m.mac === req.params.mgr);
                 return managers[0].discoverTags();
             }).then((tags) => {
                 let uuidMap = {};
-                tags.forEach((tag) => { uuidMap[tag.uuid] = tag.name; });
+                tags.forEach((tag) => { uuidMap[tag.uuid] = tag.name });
                 res.send(uuidMap);
             }).catch(apiError(res));
         });
         app.get(prefix + '/:mac/:tag/sensors', (req, res) => {
             cloud.platform.discoverTagManagers().then((managers) => {
-                managers = managers.filter((m) => {
-                    return m.mac === req.params.mac;
-                });
+                managers = managers.filter((m) => m.mac === req.params.mac);
                 return managers[0].discoverTags({ uuid: req.params.tag });
             }).then((tags) => {
                 res.send(tags[0].sensorCapabilities());
@@ -98,5 +95,4 @@ module.exports = function(RED) {
         }
     });
 
-    
 };
