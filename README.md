@@ -1,3 +1,9 @@
+[![Build Status](https://travis-ci.org/hlapp/node-red-contrib-wirelesstag.svg?branch=master)](https://travis-ci.org/hlapp/node-red-contrib-wirelesstag)
+[![npm](https://img.shields.io/npm/v/node-red-contrib-wirelesstag.svg)](https://www.npmjs.com/package/node-red-contrib-wirelesstag)
+[![npm](https://img.shields.io/npm/dt/node-red-contrib-wirelesstag.svg)](https://www.npmjs.com/package/node-red-contrib-wirelesstag)
+[![david-dm](https://david-dm.org/hlapp/node-red-contrib-wirelesstag.svg)](https://david-dm.org/hlapp/node-red-contrib-wirelesstag)
+[![david-dm](https://david-dm.org/hlapp/node-red-contrib-wirelesstag/dev-status.svg)](https://david-dm.org/hlapp/node-red-contrib-wirelesstag?type=dev)
+
 # node-red-contrib-wirelesstag
 
 ![Wireless Sensor Tag nodes in palette](assets/wirelesstag_node-red-palette.png)
