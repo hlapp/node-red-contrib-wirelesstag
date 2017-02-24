@@ -1,0 +1,7 @@
+{
+    "rules": {
+        "no-confusing-arrow": "off",
+        "no-console": "off",
+        "no-process-env": "off"
+    }
+}

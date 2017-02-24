@@ -4,7 +4,8 @@
   "description": "Node-RED node for Wireless Tags (http://wirelesstag.net)",
   "main": "./wirelesstag.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "tape test/**.js",
+    "test:ci": "tape test/01*.js | faucet",
     "lint": "eslint --ext .html,.js",
     "pretest": "npm run lint -- ."
   },
@@ -34,6 +35,10 @@
   },
   "devDependencies": {
     "eslint": "^3.16.0",
-    "eslint-plugin-html": "^2.0.1"
+    "eslint-plugin-html": "^2.0.1",
+    "express": "^4.14.1",
+    "faucet": "0.0.1",
+    "node-red": "^0.16.2",
+    "tape": "^4.6.3"
   }
 }
