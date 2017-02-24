@@ -143,7 +143,7 @@ module.exports = function(RED) {
             let dataHandler = sendData.bind(node);
             tagUpdater.on('data', dataHandler);
             tagUpdater.discoveryMode = true;
-            node.on('close', () => {
+            node.once('close', () => {
                 node.log("stopping auto-discovery mode updates");
                 tagUpdater.discoveryMode = false;
                 tagUpdater.removeListener('data', dataHandler);
@@ -155,13 +155,15 @@ module.exports = function(RED) {
     function registerTag(tag) {
         let node = this;
         let config = node.config;
-        tag.on('data', sendData.bind(node));
+        let dataHandler = sendData.bind(node);
+        tag.on('data', dataHandler);
         if (config.autoUpdate) {
             let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
             tagUpdater.addTags(tag);
-            node.on('close', () => {
+            node.once('close', () => {
                 node.log("stopping updates");
                 tagUpdater.removeTags(tag);
+                tag.removeListener('data', dataHandler);
             });
         }
     }
