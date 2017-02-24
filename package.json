@@ -34,11 +34,13 @@
     "wirelesstags": "^0.6.0"
   },
   "devDependencies": {
+    "delay": "^1.3.1",
     "eslint": "^3.16.0",
     "eslint-plugin-html": "^2.0.1",
     "express": "^4.14.1",
     "faucet": "0.0.1",
     "node-red": "^0.16.2",
+    "request": "^2.79.0",
     "tape": "^4.6.3"
   }
 }
