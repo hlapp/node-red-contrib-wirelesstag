@@ -181,6 +181,8 @@ module.exports = function(RED) {
             node.status(STATUS_DATA);
             sensors.forEach((sensor) => node.sendSensorData(sensor));
             setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
+        }).catch((err) => {
+            RED.log.error(err.stack ? err.stack : err);
         });
     }
 
@@ -248,7 +250,7 @@ module.exports = function(RED) {
             let tag = sensors[0].wirelessTag;
             let sensor = sensors.length === 1 ? sensors[0] : undefined;
             node.status(STATUS_PROCESSING);
-            processIncomingMsg(msg, sensor, tag);
+            return processIncomingMsg(msg, sensor, tag);
         }).catch((err) => {
             node.error("error processing message: " + err, msg);
         }).then(() => {
