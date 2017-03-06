@@ -105,24 +105,28 @@ test('our nodes can be created and added to a flow', function(t) {
 });
 
 test('once added to a flow nodes can be retrieved from runtime', function(t) {
-    t.plan(12);
+    t.plan(16);
 
     for (let nt in nodes) {
-        if (nodes[nt].id) {
-            let n = RED.nodes.getNode(nodes[nt].id);
-            t.ok(n, `can obtain ${nt} node object from RED runtime`);
-            if (n) {
-                t.equal(n.id, nodes[nt].id, 'it has matching ID');
-                t.equal(n.type, nodes[nt].type, 'it has matching type');
-                nodes[nt] = n;
-                let Node = RED.nodes.getType(nt);
-                t.ok(n instanceof Node, 'it is instance of constructor');
-            } else {
-                t.skip('cannot test retrieved node object');
-            }
-        } else {
+        if (! nodes[nt].id) {
             t.skip('missing node object for ' + nt);
+            continue;
         }
+        let n = RED.nodes.getNode(nodes[nt].id);
+        t.ok(n, `can obtain ${nt} node object from RED runtime`);
+        if (! n) {
+            t.skip('cannot test retrieved node object');
+            continue;
+        }
+        t.equal(n.id, nodes[nt].id, 'it has matching ID');
+        t.equal(n.type, nodes[nt].type, 'it has matching type');
+        if (nt !== CONFIG_NODE) {
+            t.equal(typeof n.debug, "function", 'has debug() log method');
+            t.ok(n.config, 'has config property with value');
+        }
+        nodes[nt] = n;
+        let Node = RED.nodes.getType(nt);
+        t.ok(n instanceof Node, 'it is instance of constructor');
     }
     t.end();
 });
