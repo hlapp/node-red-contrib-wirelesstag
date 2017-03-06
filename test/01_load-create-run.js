@@ -4,33 +4,14 @@
 
 "use strict";
 
-var http = require('http'),
-    path = require('path'),
-    EventEmitter = require('events'),
-    express = require('express'),
+var EventEmitter = require('events'),
     embeddedStart = require('node-red-embedded-start');
-var test = require('tape');
+var test = require('tape'),
+    fixture = require('./fixture');
 
-const restPrefix = require('crypto').randomBytes(8).toString('hex');
-const settings = {
-    httpAdminRoot: `/${restPrefix}/red`,
-    httpNodeRoot: `/${restPrefix}/node`,
-    functionGlobalContext: {},
-    disableEditor: true,
-    userDir: path.join(__dirname, '.node-red'),
-    nodesDir: path.join(__dirname, '..'),
-    logging: {
-        console: {
-            level: process.env.NODE_RED_LOGLEVEL || "info"
-        }
-    }
-};
-const LISTEN_PORT = process.env.PORT || 8080;
-const LISTEN_IF = "127.0.0.1";
 const FLOWS_TIMEOUT = 5000;
 
 var before = test;
-var server;
 var RED;
 var nodes = {};
 var testFlow;
@@ -40,67 +21,26 @@ const ALL_NODE = 'wirelesstag-all';
 const CONFIG_NODE = 'wirelesstag-config';
 const NODE_TYPES = [CONFIG_NODE, SENSOR_NODE, ALL_NODE];
 
-function failAndEnd(t) {
-    return (err) => {
-        t.fail(err);
-        t.end();
-    };
-}
-
 test.onFinish(function() {
-
-    function closeUp() {
-        let prom = testFlow ? RED.nodes.removeFlow(testFlow) : Promise.resolve();
-        if (RED) {
-            prom = prom.then(() => RED.stop());
-        } else {
-            prom = prom.then(() => {
-                NODE_TYPES.forEach((nt) => {
-                    if (nodes[nt] && nodes[nt].close) nodes[nt].close();
-                });
-            });
-        }
-        prom.then(() => {
-            if (! server) return;
-            return new Promise((resolve, reject) => {
-                server.close((err) => (err ? reject(err) : resolve(server)));
-            });
-        }).catch((e) => {
-            console.error("stopping Node-RED failed:");
-            console.error(e.stack ? e.stack : e);
-        });
-    }
 
     let cloud = nodes[CONFIG_NODE];
     if (cloud && cloud.platform && cloud.platform.connecting) {
-        cloud.platform.on('connect', closeUp);
+        cloud.platform.once('connect', () => fixture.closeUp(RED, testFlow, nodes));
     } else {
-        closeUp();
+        fixture.closeUp(RED, testFlow, nodes);
     }
 });
 
 before('can create and initialize Node-RED runtime', function(t) {
-    t.plan(5);
+    t.plan(3);
 
-    RED = require('node-red');
+    RED = fixture.setup();
     t.ok(RED, 'instantiates Node-RED runtime');
-
-    let app = express();
-    // app.get('/flows', (req, res) => res.send("Test server"));
-    server = http.createServer(app);
-    RED.init(server, settings);
-    t.ok(RED.httpAdmin, 'creates HTTP Admin API');
-    t.ok(RED.httpNode, 'creates HTTP Node API');
-
-    // serve the admin and nodes http APIs
-    app.use(settings.httpAdminRoot, RED.httpAdmin);
-    app.use(settings.httpNodeRoot, RED.httpNode);
-    server.listen(LISTEN_PORT, LISTEN_IF);
 
     RED.start().then((result) => {
         t.pass('starts Node-RED runtime');
         return embeddedStart(RED, FLOWS_TIMEOUT, result);
-    }).then(() => t.pass("flows started")).catch(failAndEnd(t));
+    }).then(() => t.pass("flows started")).catch(fixture.failAndEnd(t));
 });
 
 test('our nodes are registered', function(t) {
@@ -160,7 +100,7 @@ test('our nodes can be created and added to a flow', function(t) {
             t.equal(result.nodes[i].type.indexOf('wirelesstag'), 0,
                     `node ${i} is of one of the types we define`);
         }
-    }).then(t.end).catch(failAndEnd(t));
+    }).then(t.end).catch(fixture.failAndEnd(t));
 });
 
 test('once added to a flow nodes can be retrieved from runtime', function(t) {
