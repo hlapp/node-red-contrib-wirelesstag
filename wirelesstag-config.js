@@ -13,9 +13,12 @@ module.exports = function(RED) {
         this.once('close', () => {
             this.log("stopping tag updater");
             this.tagUpdater.stopUpdateLoop();
+            this.platform.signoff().then(
+                () => this.log("signed out of Wireless Tag cloud")
+            );
         });
-        this.platform.connect(this.credentials).then(() => {
-            this.log("connected to Wireless Tag Cloud");
+        this.platform.signin(this.credentials).then(() => {
+            this.log("signed in to Wireless Tag Cloud");
             this.tagUpdater.startUpdateLoop((err, result) => {
                 if (err) return; // errors are handled elsewhere
                 if (result.value.length === 0) {
