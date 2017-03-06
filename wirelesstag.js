@@ -171,7 +171,7 @@ module.exports = function(RED) {
     function sendData(tag) {
         let node = this;
         let config = node.config;
-        tag.discoverSensors().then((sensors) => {
+        return tag.discoverSensors().then((sensors) => {
             if (config.sensor) {
                 sensors = sensors.filter((s) => s.sensorType === config.sensor);
                 if (sensors.length === 0) {
@@ -181,6 +181,7 @@ module.exports = function(RED) {
             node.status(STATUS_DATA);
             sensors.forEach((sensor) => node.sendSensorData(sensor));
             setTimeout(node.status.bind(node, STATUS_CONNECTED), 1000);
+            return tag;
         }).catch((err) => {
             RED.log.error(err.stack ? err.stack : err);
         });

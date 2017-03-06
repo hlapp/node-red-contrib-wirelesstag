@@ -5,6 +5,7 @@
 "use strict";
 
 var EventEmitter = require('events'),
+    sinon = require('sinon'),
     embeddedStart = require('node-red-embedded-start');
 var test = require('tape'),
     fixture = require('./fixture');
@@ -124,4 +125,102 @@ test('once added to a flow nodes can be retrieved from runtime', function(t) {
         }
     }
     t.end();
+});
+
+test('connects to cloud and starts IO for our nodes', function(t) {
+    t.plan(44);
+
+    let nodeTypes = [SENSOR_NODE, ALL_NODE];
+    let startIOspies = {}, sendSpies = {};
+    nodeTypes.forEach((nt) => {
+        startIOspies[nt] = sinon.spy(nodes[nt], "startIO");
+        sendSpies[nt] = sinon.spy(nodes[nt], "send");
+    });
+
+    function testMsg(msg, tag, tt) {
+        tt.equal(typeof msg.tagManager, 'object', 'message has tagManager object');
+        ['mac', 'name'].forEach((k) => {
+            tt.equal(msg.tagManager[k],
+                     tag.wirelessTagManager[k],
+                     `property "${k}" of msg.tagManager is correct`);
+        });
+        tt.equal(typeof msg.tag, 'object', 'message has tag object');
+        ['name', 'uuid', 'slaveId'].forEach((k) => {
+            tt.equal(msg.tag[k], tag[k], `property "${k}" of msg.tag is correct`);
+        });
+        let sensor = tag[msg.payload.sensor + 'Sensor'];
+        tt.ok(sensor, 'payload references valid sensor of the tag');
+        tt.equal(msg.payload.reading, sensor.reading,
+                 'payload gives correct reading');
+        tt.equal(msg.payload.eventState, sensor.eventState,
+                 'payload gives correct event state');
+        tt.equal(msg.payload.armed, sensor.isArmed(),
+                 'payload gives correct armed state');
+        let topicParts = msg.topic.split("/");
+        tt.equal(topicParts.length, 3,
+                 'topic consists of 3 elements separated by "/"');
+        tt.equal(topicParts[0], tag.wirelessTagManager.mac,
+                 'first element is tag manager');
+        tt.equal(topicParts[1], tag.slaveId.toString(),
+                 'second element is tag (slave ID)');
+        tt.equal(topicParts[2], sensor.sensorType,
+                 'third element is sensor type');
+    }
+
+    function onConnect(platform) {
+        t.pass('is connected to cloud');
+        nodeTypes.forEach((nt) => {
+            t.ok(startIOspies[nt].calledOnce, 'startIO() called for ' + nt);
+            t.ok(sendSpies[nt].notCalled, 'send() not called for ' + nt);
+        });
+        platform.discoverTags().then((tags) => {
+            t.ok(tags.length > 0, 'have one or more tags to test');
+            let tag = tags[0];
+            let sensorNode = nodes[SENSOR_NODE];
+            sensorNode.config.tagmanager = tag.wirelessTagManager.mac;
+            sensorNode.config.tag = tag.uuid;
+            sensorNode.config.sensor = "temp"; // every tag should have temp
+            return sensorNode.findTag().then((foundTag) => {
+                t.ok(foundTag, 'can find tag through sensor node');
+                t.equal(foundTag.uuid, tag.uuid, 'finds the correct tag');
+                return foundTag.discoverSensors().then((sensors) => {
+                    t.equal(sensors.length, foundTag.eachSensor().length,
+                            'finds each of the tag\'s sensors');
+                    sensorNode.startIO();
+                    return nodes[ALL_NODE].sendData(tag);
+                });
+            });
+        }).then((tag) => {
+            t.ok(tag, 'sends data for ' + ALL_NODE);
+            t.equal(sendSpies[SENSOR_NODE].callCount, 1,
+                    'one message sent for ' + SENSOR_NODE);
+            t.equal(sendSpies[ALL_NODE].callCount, tag.eachSensor().length,
+                    'one message sent for each sensor for ' + ALL_NODE);
+            t.comment(`message properties for ${SENSOR_NODE}:`);
+            let msg = sendSpies[SENSOR_NODE].args[0][0];
+            testMsg(msg, tag, t);
+            t.comment(`message properties for ${ALL_NODE}, temp sensor:`);
+            msg = sendSpies[ALL_NODE].args.map((args) => args[0]
+            ).filter((msgArg) => msgArg.payload.sensor === "temp");
+            testMsg(msg[0], tag, t);
+        }).then(() => {
+            // cleanup spies right here
+            nodeTypes.forEach((nt) => {
+                nodes[nt].startIO.restore();
+                nodes[nt].send.restore();
+            });
+            t.pass('done with IO test teardown');
+        }).catch(fixture.failAndEnd(t));
+    }
+
+    let platform = nodes[CONFIG_NODE].platform;
+    t.ok(platform, 'config node has platform object');
+    if (platform.connecting) {
+        platform.on('connect', onConnect);
+    } else {
+        platform.isConnected().then((connected) => {
+            if (connected) return onConnect(platform);
+            t.fail('is not connected nor connecting');
+        }).catch(fixture.failAndEnd(t));
+    }
 });
