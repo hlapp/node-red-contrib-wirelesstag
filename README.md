@@ -8,7 +8,7 @@
 
 ![Wireless Sensor Tag nodes in palette](assets/wirelesstag_node-red-palette.png)
 
-Two nodes (_wirelesstag-s_ and _wirelesstag-a_) for [Node-RED] that access
+<img style="float:right;" src="https://raw.githubusercontent.com/hlapp/node-red-contrib-wirelesstag/master/assets/wirelesstag_node-red-palette.png"> Two nodes (_wirelesstag-s_ and _wirelesstag-a_) for [Node-RED] that access
 [Wireless Sensor Tags] and their sensors. One (_wirelesstag-s_) represents an
 individual sensor on a specified tag, and will output data from only that
 sensor. The other node (_wirelesstag-a_) represents the whole collection of
