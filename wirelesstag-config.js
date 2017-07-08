@@ -89,7 +89,7 @@ module.exports = function(RED) {
         });
     }
 
-    addWirelesstagRoutes(RED.httpNode);
+    addWirelesstagRoutes(RED.httpAdmin);
 
     RED.nodes.registerType("wirelesstag-config", WirelessTagConfig, {
         credentials: {
