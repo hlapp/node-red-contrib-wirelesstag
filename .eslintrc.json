@@ -77,7 +77,12 @@
         "id-match": "error",
         "indent": [
             "error",
-            4
+            4,
+            {
+                "CallExpression": {
+                    "arguments": "first"
+                }
+            }
         ],
         "init-declarations": "off",
         "jsx-quotes": "error",
