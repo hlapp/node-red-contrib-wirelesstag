@@ -195,6 +195,8 @@ module.exports = function(RED) {
                 sensor: sensor.sensorType,
                 reading: sensor.reading,
                 eventState: sensor.eventState,
+                probeType: sensor.probeType,
+                probeDisconnected: sensor.probeDisconnected,
                 armed: sensor.isArmed()
             }
         };

@@ -264,7 +264,10 @@
         properties <code>sensor</code> (the kind of sensor, such as light),
         <code>reading</code> (the sensor's current reading),
         <code>eventState</code> (the current state, such
-        as <em>Normal</em>, <em>Too High</em>, etc),
+        as <em>Normal</em>, <em>Too High</em>, etc), <code>probeType</code>
+        (the type of probe for certain sensors such as temperature),
+        <code>probeDisconnected</code> (whether an external probe is disconnected
+        for sensors that allow detecting that),
         and <code>armed</code> (true if the sensor is armed and false otherwise).</li>
         <li><strong><code>msg.sensorConfig</code></strong>: the
         properties of the monitoring configuration for the
