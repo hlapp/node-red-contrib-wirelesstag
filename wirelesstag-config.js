@@ -8,33 +8,70 @@ module.exports = function(RED) {
     /** @constructor */
     function WirelessTagConfig(config) {
         RED.nodes.createNode(this, config);
+
+        // set up member methods
+        this.startUpdater = startUpdater;
+        this.signin = signin;
+        // done setting up member methods
+
+        let onConnect = () => {
+            this.log("signed in to Wireless Tag Cloud");
+            this.startUpdater(this.tagUpdater);
+        };
+
         this.platform = new Platform({ apiBaseURI: config.apiURI });
         this.tagUpdater = new TagUpdater(this.platform);
         this.once('close', () => {
             this.log("stopping tag updater");
             this.tagUpdater.stopUpdateLoop();
+            this.platform.removeListener('connect', onConnect);
             this.platform.signoff().then(
                 () => this.log("signed out of Wireless Tag cloud")
             );
         });
-        this.platform.signin(this.credentials).then(() => {
-            this.log("signed in to Wireless Tag Cloud");
-            this.tagUpdater.startUpdateLoop((err, result) => {
-                if (err) return; // errors are handled elsewhere
-                if (result.value.length === 0) {
-                    RED.log.debug("no updates for wirelesstag nodes");
-                } else {
-                    let names = result.value.map((d) => d.name).join(", ");
-                    RED.log.debug("new data for " + result.value.length
-                                  + " wirelesstag node(s): " + names);
-                }
-            });
-        }).catch((err) => {
+        this.platform.on('connect', onConnect);
+        this.signin(this.platform);
+    }
+
+    /* eslint-disable no-invalid-this */
+    function signin(platform) {
+        let node = this;
+        if (! platform) platform = node.platform;
+        return platform.signin(node.credentials).catch((err) => {
             if (err instanceof Platform.UnauthorizedAccessError) {
-                this.error("failed to connect to Wireless Tag API:");
+                node.error("failed to connect to Wireless Tag API:");
             }
-            this.error(err.stack ? err.stack : err);
+            node.error(err.stack ? err.stack : err);
         });
+    }
+
+    function startUpdater(tagUpdater) {
+        let node = this;
+        if (! tagUpdater) tagUpdater = node.tagUpdater;
+        node.log('starting tag updater');
+        tagUpdater.startUpdateLoop((err, result) => {
+            if (err) {
+                RED.log.error('polling for updates failed: '
+                               + JSON.stringify(err.Fault));
+                node.platform.isSignedIn().then((signedIn) => {
+                    if (! signedIn) return node.signin(node.platform);
+                    RED.log.error('(still signed in to Wireless Tags cloud)');
+                });
+            } else {
+                logUpdaterResult(result);
+            }
+        });
+    }
+    /* eslint-enable no-invalid-this */
+
+    function logUpdaterResult(result) {
+        if (result.value.length === 0) {
+            RED.log.debug("no updates for wirelesstag nodes");
+        } else {
+            let names = result.value.map((d) => d.name).join(", ");
+            RED.log.debug("new data for " + result.value.length
+                          + " wirelesstag node(s): " + names);
+        }
     }
 
     function addWirelesstagRoutes(app) {

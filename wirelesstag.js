@@ -60,24 +60,34 @@ module.exports = function(RED) {
 
         let onConnect = () => {
             this.status(STATUS_CONNECTED);
+        };
+        let onFirstConnect = (platform) => {
+            platform.on('connect', onConnect);
+            onConnect(platform);
+            // The following will, among other things, install some event
+            // handlers for generating messages from tag data update, which
+            // should be done only once, not every sign in/sign off cycle.
             this.startIO();
+        };
+        let onDisconnect = () => {
+            this.status(STATUS_DISCONNECTED);
         };
 
         let cloud = RED.nodes.getNode(config.cloud);
         if (cloud) {
             this.status(STATUS_DISCONNECTED);
-            let platform = cloud.platform;
+            cloud.platform.on('disconnect', onDisconnect);
             // there are 3 cases to distinguish: (1) platform is currently
-            // connecting, (2) platform is already connected, and (3) platform
-            // is neither connected nor connecting. In cases (1) and (3) we
+            // connecting, (2) platform is already signed in, and (3) platform
+            // is neither signed in nor connecting. In cases (1) and (3) we
             // will watch for the connect event, and in case (2) the connect
             // event already passed, so we need to just go ahead.
-            if (platform.connecting) {
-                platform.on('connect', onConnect);
+            if (cloud.platform.connecting) {
+                cloud.platform.once('connect', onFirstConnect);
             } else {
-                platform.isConnected().then((connected) => {
-                    if (connected) return onConnect(platform);
-                    platform.on('connect', onConnect);
+                cloud.platform.isSignedIn().then((signedIn) => {
+                    if (signedIn) return onFirstConnect(cloud.platform);
+                    cloud.platform.once('connect', onFirstConnect);
                 }).catch((err) => {
                     this.status(STATUS_ERROR);
                     RED.log.error(err.stack ? err.stack : err);
