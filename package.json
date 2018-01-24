@@ -4,7 +4,7 @@
   "description": "Node-RED node for Wireless Tags (http://wirelesstag.net)",
   "main": "./wirelesstag.js",
   "scripts": {
-    "test": "tape test/[0-9]*.js",
+    "test": "TEST_ALL=1 tape test/[0-9]*.js",
     "test:ci": "tape test/01*.js | faucet",
     "lint": "eslint --ext .html,.js",
     "pretest": "npm run lint -- ."

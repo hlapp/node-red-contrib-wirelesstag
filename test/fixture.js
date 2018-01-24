@@ -51,6 +51,20 @@ module.exports = {
             console.error(e.stack ? e.stack : e);
         });
     },
+    createNodeDescriptor: function(RED, nodeType, confNodeId) {
+        let conf = { id: RED.util.generateId(), type: nodeType };
+        if (confNodeId) {
+            conf.x = conf.y = 0;
+            conf.cloud = confNodeId;
+            conf.wires = [];
+        } else {
+            conf.credentials = {
+                username: '$(WIRELESSTAG_API_USER)',
+                password: '$(WIRELESSTAG_API_PASSWORD)'
+            };
+        }
+        return conf;
+    },
     setup: function() {
         let RED = require('node-red');
 

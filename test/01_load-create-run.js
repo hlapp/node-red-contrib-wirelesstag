@@ -228,3 +228,83 @@ test('connects to cloud and starts IO for our nodes', function(t) {
         }).catch(fixture.failAndEnd(t));
     }
 });
+
+test('is resilient to platform disconnect when not closing', function(t) {
+    if (! process.env.TEST_ALL) {
+        t.skip('set TEST_ALL environment to true to enable resilience test');
+        return t.end();
+    }
+    t.plan(10);
+
+    const RECOVERY_TIMEOUT = 60 * 6 * 1000; // 6 minutes
+    let confNodeDesc = fixture.createNodeDescriptor(RED, CONFIG_NODE);
+    let allNodeDesc = fixture.createNodeDescriptor(RED, ALL_NODE, confNodeDesc.id);
+    let nflow = {
+        label: "Test2 Flow",
+        nodes: [allNodeDesc],
+        configs: [confNodeDesc]
+    };
+    let sendSpy;
+
+    function testResilience(platform) {
+        RED.nodes.addFlow(nflow).then((flowid) => {
+            t.ok(flowid, 'successfully created test flow with our nodes');
+            t.notEqual(flowid, testFlow, 'created flow has its own ID');
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(RED.nodes.removeFlow(flowid)), 1500);
+            });
+        }).then(() => {
+            t.pass('successfully removed (stopped) new flow again');
+            return new Promise((resolve) => {
+                setTimeout(() => resolve(platform.isSignedIn()), 500);
+            });
+        }).then((signedIn) => {
+            t.equal(signedIn, false, 'platform is now signed out');
+            let nodeObj = RED.nodes.getNode(nodes[ALL_NODE].id);
+            t.ok(nodeObj, `retrieved instance of node ${nodeObj.id} for testing recovery`);
+            let confNode = RED.nodes.getNode(nodeObj.config.cloud);
+            if (! confNode) {
+                t.fail(`failed to retrieve config node for ${nodeObj.id}`);
+            } else if (confNode.platform === undefined) {
+                t.fail(`config node for ${nodeObj.id} does not have platform instance`);
+            } else {
+                confNode.platform.once('connect', () => {
+                    t.pass(`platform instance of ${confNode.id} signed in again`);
+                });
+            }
+            sendSpy = sinon.spy(nodeObj, "send");
+            return new Promise((resolve, reject) => {
+                let timer = setTimeout(reject.bind(null, nodeObj), RECOVERY_TIMEOUT);
+                nodeObj.send = function(msg) {
+                    nodeObj.send = sendSpy;
+                    nodeObj.send(msg);
+                    clearTimeout(timer);
+                    t.ok(msg, 'remaining flow recovered to continue sending data');
+                    resolve(nodeObj);
+                };
+            });
+        }).then((nodeObj) => {
+            setTimeout(() => {
+                nodeObj.send.restore();
+                let topics = new Set();
+                sendSpy.args.map((args) => topics.add(args[0].topic));
+                t.equal(topics.size, sendSpy.callCount, 'sent each topic (= sensor) only once');
+            }, 100);
+            return nodeObj;
+        }).catch((nodeObj) => {
+            if (sendSpy) {
+                nodeObj.send = sendSpy;
+                nodeObj.send.restore();
+            }
+            t.fail('remaining flow failed to continue receiving data');
+            t.end();
+        });
+    }
+
+    let platform = nodes[CONFIG_NODE].platform;
+    t.ok(platform, 'config node has platform object');
+    platform.isSignedIn().then((signedIn) => {
+        t.equal(signedIn, true, "platform is connected");
+        return testResilience(platform);
+    }).catch(fixture.failAndEnd(t));
+});
