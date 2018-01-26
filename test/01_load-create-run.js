@@ -61,20 +61,11 @@ test('our nodes are registered', function(t) {
 test('our nodes can be created and added to a flow', function(t) {
     t.plan(9);
 
-    NODE_TYPES.forEach((nt) => {
-        let conf = { id: RED.util.generateId(), type: nt };
-        if (nt === CONFIG_NODE) {
-            conf.credentials = {
-                username: '$(WIRELESSTAG_API_USER)',
-                password: '$(WIRELESSTAG_API_PASSWORD)'
-            };
-        } else {
-            conf.x = conf.y = 0;
-            conf.cloud = nodes[CONFIG_NODE].id;
-            conf.wires = [];
-        }
-        nodes[nt] = conf;
-    });
+    nodes[CONFIG_NODE] = fixture.createNodeDescriptor(RED, CONFIG_NODE);
+    for (let nt of NODE_TYPES) {
+        if (nt === CONFIG_NODE) continue;
+        nodes[nt] = fixture.createNodeDescriptor(RED, nt, nodes[CONFIG_NODE].id);
+    }
     let flow = {
         label: "Test Flow",
         nodes: [nodes[SENSOR_NODE], nodes[ALL_NODE]],
