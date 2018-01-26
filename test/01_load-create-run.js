@@ -59,7 +59,7 @@ test('our nodes are registered', function(t) {
 });
 
 test('our nodes can be created and added to a flow', function(t) {
-    t.plan(9);
+    t.plan(11);
 
     nodes[CONFIG_NODE] = fixture.createNodeDescriptor(RED, CONFIG_NODE);
     for (let nt of NODE_TYPES) {
@@ -85,6 +85,8 @@ test('our nodes can be created and added to a flow', function(t) {
         nodes[result.configs[0].type] = result.configs[0];
 
         for (let i = 0; i < result.nodes.length; i++) {
+            t.equal(result.nodes[i].id, nodes[result.nodes[i].type].id,
+                    `node ${i} has correct ID`);
             nodes[result.nodes[i].type] = result.nodes[i];
             t.equal(result.nodes[i].cloud,
                     result.configs[0].id,
@@ -169,6 +171,7 @@ test('connects to cloud and starts IO for our nodes', function(t) {
             t.ok(sendSpies[nt].notCalled, 'send() not called for ' + nt);
         });
         platform.discoverTags().then((tags) => {
+            tags = tags.filter((tag) => tag.isPhysicalTag());
             t.ok(tags.length > 0, 'have one or more tags to test');
             let tag = tags[0];
             let sensorNode = nodes[SENSOR_NODE];
