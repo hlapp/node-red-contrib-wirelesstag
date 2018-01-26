@@ -166,12 +166,13 @@ module.exports = function(RED) {
         let node = this;
         let config = node.config;
         let dataHandler = sendData.bind(node);
+        node.log(`registering ${tag.name} for updates`);
         tag.on('data', dataHandler);
         if (config.autoUpdate) {
             let tagUpdater = RED.nodes.getNode(config.cloud).tagUpdater;
             tagUpdater.addTags(tag);
             node.once('close', () => {
-                node.log("stopping updates");
+                node.log(`stopping updates for ${tag.name}`);
                 tagUpdater.removeTags(tag);
                 tag.removeListener('data', dataHandler);
             });
